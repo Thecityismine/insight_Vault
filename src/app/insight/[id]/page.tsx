@@ -3,7 +3,7 @@ import { use, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft, ExternalLink, Clock, CheckSquare, Square,
   AlertCircle, Star, Trash2, Copy, RefreshCw, Pencil,
-  Check, X, Plus, Loader2,
+  Check, X, Plus, Loader2, Timer,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
 import { getInsight, updateInsight, deleteInsight, toggleActionItem } from "@/lib/firestore";
 import { getPlatformLabel, formatDate } from "@/lib/utils";
+import { stripTimestamps } from "@/lib/transcript/clean";
 import type { Insight } from "@/types";
 import toast from "react-hot-toast";
 
@@ -40,6 +41,9 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
 
   // Reprocess
   const [reprocessing, setReprocessing] = useState(false);
+
+  // Transcript view
+  const [showTimestamps, setShowTimestamps] = useState(false);
 
   useEffect(() => {
     getInsight(id).then(setInsight).finally(() => setLoading(false));
@@ -294,6 +298,25 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
         </div>
       </div>
 
+      {/* ── Thumbnail ── */}
+      {insight.thumbnail && (
+        <div className="relative w-full h-48 rounded-2xl overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={insight.thumbnail}
+            alt={insight.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#05070A]/70 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#05070A]/60 via-transparent to-transparent" />
+          {insight.duration && (
+            <div className="absolute bottom-3 right-3">
+              <Badge variant="muted">{insight.duration}</Badge>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Categories & Tags ── */}
       <div className="flex flex-wrap gap-4">
         {/* Categories */}
@@ -437,13 +460,30 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
                 <div className="flex items-center gap-2">
                   <h2 className="text-[#66717F] text-xs uppercase tracking-widest font-mono">Transcript</h2>
                   <Badge variant="muted">{insight.transcript.source}</Badge>
+                  {insight.transcript.hasTimestamps && (
+                    <Badge variant="green">timestamped</Badge>
+                  )}
                 </div>
-                <button
-                  onClick={copyTranscript}
-                  className="flex items-center gap-1.5 text-[#66717F] hover:text-[#00E676] text-xs transition-colors"
-                >
-                  <Copy size={12} />Copy
-                </button>
+                <div className="flex items-center gap-2">
+                  {insight.transcript.hasTimestamps && (
+                    <button
+                      onClick={() => setShowTimestamps((v) => !v)}
+                      className={`flex items-center gap-1 text-xs transition-colors ${
+                        showTimestamps ? "text-[#00E676]" : "text-[#66717F] hover:text-[#A7B0BC]"
+                      }`}
+                      title="Toggle timestamps"
+                    >
+                      <Timer size={12} />
+                      {showTimestamps ? "Hide" : "Show"}
+                    </button>
+                  )}
+                  <button
+                    onClick={copyTranscript}
+                    className="flex items-center gap-1.5 text-[#66717F] hover:text-[#00E676] text-xs transition-colors"
+                  >
+                    <Copy size={12} />Copy
+                  </button>
+                </div>
               </div>
               {insight.transcript.processingWarnings?.length > 0 && (
                 <div className="mb-3 p-2.5 rounded-lg bg-[#F5C542]/10 border border-[#F5C542]/20">
@@ -453,9 +493,26 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
                 </div>
               )}
               <div className="max-h-52 overflow-y-auto">
-                <p className="text-[#66717F] text-xs leading-relaxed font-mono whitespace-pre-wrap">
-                  {insight.transcript.text}
-                </p>
+                {insight.transcript.hasTimestamps && showTimestamps ? (
+                  <div className="space-y-1">
+                    {insight.transcript.text.split("\n").map((line, i) => {
+                      const match = line.match(/^(\[\d+:\d+(?::\d+)?\])\s*(.*)/);
+                      if (!match) return null;
+                      return (
+                        <div key={i} className="flex gap-2 text-xs font-mono">
+                          <span className="text-[#00E676]/60 flex-shrink-0 w-14 text-right">{match[1]}</span>
+                          <span className="text-[#66717F]">{match[2]}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-[#66717F] text-xs leading-relaxed font-mono whitespace-pre-wrap">
+                    {insight.transcript.hasTimestamps
+                      ? stripTimestamps(insight.transcript.text)
+                      : insight.transcript.text}
+                  </p>
+                )}
               </div>
             </Card>
           )}

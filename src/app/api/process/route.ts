@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { parseLink } from "@/lib/transcript/platform";
 import { fetchTranscript } from "@/lib/transcript";
+import { fetchYouTubeMetadata } from "@/lib/transcript/youtube";
+import { stripTimestamps, cleanTranscript } from "@/lib/transcript/clean";
 import { createInsight } from "@/lib/firestore";
 import type { ActionItem, Platform } from "@/types";
 
@@ -37,10 +39,15 @@ export async function POST(req: NextRequest) {
     }
 
     const isManualOnly = url === "manual://transcript" || !url;
-    const meta = isManualOnly ? { platform: "other" as const, url: "manual://transcript" } : parseLink(url);
+    const meta = isManualOnly
+      ? { platform: "other" as const, url: "manual://transcript" }
+      : parseLink(url);
 
-    // Get transcript
+    // Fetch transcript + YouTube metadata in parallel
     let transcriptData;
+    let thumbnail: string | undefined;
+    let videoTitle: string | undefined;
+
     if (manualTranscript?.trim()) {
       transcriptData = {
         text: manualTranscript,
@@ -52,7 +59,12 @@ export async function POST(req: NextRequest) {
         processingWarnings: [],
       };
     } else {
-      const result = await fetchTranscript(meta);
+      const [result, ytMeta] = await Promise.all([
+        fetchTranscript(meta),
+        meta.platform === "youtube" && meta.videoId
+          ? fetchYouTubeMetadata(meta.videoId)
+          : Promise.resolve(null),
+      ]);
 
       if (!result.text || result.source === "manual_paste") {
         return NextResponse.json(
@@ -61,11 +73,18 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      transcriptData = {
-        ...result,
-        fetchedAt: new Date().toISOString(),
-      };
+      transcriptData = { ...result, fetchedAt: new Date().toISOString() };
+
+      if (ytMeta) {
+        thumbnail = ytMeta.thumbnail || undefined;
+        videoTitle = ytMeta.title || undefined;
+      }
     }
+
+    // Prepare clean text for AI — strip timestamps and filler words
+    const aiText = transcriptData.hasTimestamps
+      ? cleanTranscript(stripTimestamps(transcriptData.text))
+      : transcriptData.text;
 
     // Extract insights with AI
     const completion = await getOpenAI().chat.completions.create({
@@ -74,18 +93,22 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
-          content: `Platform: ${meta.platform}\nURL: ${url ?? "manual"}\n\nTranscript:\n${transcriptData.text.slice(0, 40000)}`,
+          content: [
+            `Platform: ${meta.platform}`,
+            `URL: ${url ?? "manual"}`,
+            videoTitle ? `Video title: ${videoTitle}` : "",
+            `\nTranscript:\n${aiText.slice(0, 40000)}`,
+          ]
+            .filter(Boolean)
+            .join("\n"),
         },
       ],
       response_format: { type: "json_object" },
       max_tokens: 2000,
     });
 
-    const extracted = JSON.parse(
-      completion.choices[0].message.content ?? "{}"
-    );
+    const extracted = JSON.parse(completion.choices[0].message.content ?? "{}");
 
-    // Build action items with IDs
     const actionItems: ActionItem[] = (extracted.actionItems ?? []).map(
       (item: { text: string; priority: string }, i: number) => ({
         id: `action_${Date.now()}_${i}`,
@@ -100,7 +123,8 @@ export async function POST(req: NextRequest) {
       userId,
       url,
       platform: meta.platform as Platform,
-      title: extracted.title ?? "Untitled Insight",
+      title: videoTitle || extracted.title || "Untitled Insight",
+      thumbnail,
       summary: extracted.summary ?? "",
       keyPoints: extracted.keyPoints ?? [],
       actionItems,
