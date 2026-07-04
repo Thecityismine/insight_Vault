@@ -4,6 +4,7 @@ import {
   addDoc,
   getDoc,
   getDocs,
+  setDoc,
   updateDoc,
   deleteDoc,
   query,
@@ -11,6 +12,39 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Insight, ActionItem } from "@/types";
+
+export interface UserSettings {
+  autoCategories: boolean;
+  extractActionItems: boolean;
+  audioTranscription: boolean;
+  stripFillerWords: boolean;
+}
+
+const DEFAULT_SETTINGS: UserSettings = {
+  autoCategories: true,
+  extractActionItems: true,
+  audioTranscription: true,
+  stripFillerWords: true,
+};
+
+const USER_SETTINGS = "userSettings";
+
+export async function getUserSettings(userId: string): Promise<UserSettings> {
+  try {
+    const snap = await getDoc(doc(db, USER_SETTINGS, userId));
+    if (!snap.exists()) return { ...DEFAULT_SETTINGS };
+    return { ...DEFAULT_SETTINGS, ...snap.data() } as UserSettings;
+  } catch {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+export async function saveUserSettings(
+  userId: string,
+  settings: Partial<UserSettings>
+): Promise<void> {
+  await setDoc(doc(db, USER_SETTINGS, userId), settings, { merge: true });
+}
 
 const INSIGHTS = "insights";
 

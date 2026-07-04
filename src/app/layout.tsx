@@ -8,8 +8,23 @@ import { Toaster } from "react-hot-toast";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Insight Terminal",
-  description: "Your private intelligence dashboard for ideas",
+  title: {
+    default: "Insight Terminal",
+    template: "%s — Insight Terminal",
+  },
+  description: "Your private intelligence dashboard — extract insights from YouTube, podcasts, and more.",
+  keywords: ["intelligence", "insights", "youtube", "podcast", "AI", "productivity"],
+  openGraph: {
+    title: "Insight Terminal",
+    description: "Your private intelligence dashboard for ideas and insights.",
+    type: "website",
+    siteName: "Insight Terminal",
+  },
+  twitter: {
+    card: "summary",
+    title: "Insight Terminal",
+    description: "Your private intelligence dashboard for ideas and insights.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
