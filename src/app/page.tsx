@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/lib/auth";
-import { getDashboardStats, getRecentInsights, getUserInsights } from "@/lib/firestore";
+import { getUserInsights } from "@/lib/firestore";
 import { getTopicTrends, getKnowledgeGaps } from "@/lib/intelligence";
 import { getPlatformLabel, formatRelativeTime } from "@/lib/utils";
 import type { Insight } from "@/types";
@@ -38,13 +38,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([
-      getDashboardStats(user.uid),
-      getRecentInsights(user.uid, 5),
-      getUserInsights(user.uid),
-    ]).then(([s, r, all]) => {
-      setStats(s);
-      setRecent(r);
+    getUserInsights(user.uid).then((all) => {
+      const allActions = all.flatMap((i) => i.actionItems);
+      setStats({
+        totalInsights: all.length,
+        actionItems: allActions.filter((a) => !a.completed).length,
+        highValueIdeas: all.filter((i) => i.confidenceScore >= 0.8).length,
+        inProgress: all.filter((i) => i.status === "processing").length,
+      });
+      setRecent(all.slice(0, 5));
       setTrends(getTopicTrends(all));
       setGaps(getKnowledgeGaps(all));
     }).finally(() => setLoading(false));

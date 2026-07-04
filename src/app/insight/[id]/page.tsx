@@ -58,9 +58,10 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
   const [related, setRelated] = useState<RelatedInsight[]>([]);
 
   useEffect(() => {
+    if (!user) return;
     getInsight(id).then(async (ins) => {
       setInsight(ins);
-      if (ins && user) {
+      if (ins) {
         incrementViewCount(id).catch(() => {});
         const all = await getUserInsights(user.uid);
         setRelated(getRelatedInsights(ins, all));

@@ -126,7 +126,7 @@ export function printInsight(insight: Insight) {
     .join("");
 
   const keyPointsHtml = insight.keyPoints
-    .map((p, i) => `<li style="margin:4px 0;color:#222">${p}</li>`)
+    .map((p) => `<li style="margin:4px 0;color:#222">${p}</li>`)
     .join("");
 
   const html = `<!DOCTYPE html>
