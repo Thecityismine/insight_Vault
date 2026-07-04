@@ -113,7 +113,11 @@ export default function LibraryPage() {
       {!loading && filtered.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((insight) => (
-            <InsightCard key={insight.id} insight={insight} />
+            <InsightCard
+              key={insight.id}
+              insight={insight}
+              onDelete={(id) => setInsights((prev) => prev.filter((i) => i.id !== id))}
+            />
           ))}
         </div>
       )}

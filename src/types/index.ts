@@ -46,6 +46,7 @@ export interface Insight {
   status: InsightStatus;
   transcript?: TranscriptData;
   confidenceScore: number;
+  starred: boolean;
   createdAt: string;
   updatedAt: string;
 }

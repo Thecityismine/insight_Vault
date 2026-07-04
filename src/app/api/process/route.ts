@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
       categories: extracted.categories ?? [],
       tags: extracted.tags ?? [],
       status: "complete",
+      starred: false,
       transcript: transcriptData,
       confidenceScore: extracted.confidenceScore ?? 0.7,
     });
