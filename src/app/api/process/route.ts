@@ -4,7 +4,6 @@ import { parseLink } from "@/lib/transcript/platform";
 import { fetchTranscript } from "@/lib/transcript";
 import { fetchYouTubeMetadata } from "@/lib/transcript/youtube";
 import { stripTimestamps, cleanTranscript } from "@/lib/transcript/clean";
-import { createInsight } from "@/lib/firestore";
 import type { ActionItem, Platform } from "@/types";
 
 function getOpenAI() {
@@ -32,7 +31,7 @@ Return a JSON object with these exact fields:
 
 export async function POST(req: NextRequest) {
   try {
-    const { url, manualTranscript, userId = "anonymous" } = await req.json();
+    const { url, manualTranscript } = await req.json();
 
     if (!url && !manualTranscript?.trim()) {
       return NextResponse.json({ error: "URL or transcript is required" }, { status: 400 });
@@ -119,8 +118,7 @@ export async function POST(req: NextRequest) {
       })
     );
 
-    const insightId = await createInsight({
-      userId,
+    const insight = {
       url,
       platform: meta.platform as Platform,
       title: videoTitle || extracted.title || "Untitled Insight",
@@ -133,13 +131,13 @@ export async function POST(req: NextRequest) {
       personalRelevance: extracted.personalRelevance ?? "",
       categories: extracted.categories ?? [],
       tags: extracted.tags ?? [],
-      status: "complete",
+      status: "complete" as const,
       starred: false,
       transcript: transcriptData,
       confidenceScore: extracted.confidenceScore ?? 0.7,
-    });
+    };
 
-    return NextResponse.json({ insightId });
+    return NextResponse.json({ insight });
   } catch (err) {
     console.error("Process error:", err);
     return NextResponse.json(

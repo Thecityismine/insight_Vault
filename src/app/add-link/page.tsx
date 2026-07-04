@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { parseLink } from "@/lib/transcript/platform";
 import { getPlatformLabel } from "@/lib/utils";
+import { createInsight } from "@/lib/firestore";
 
 type Step =
   | "idle"
@@ -87,10 +88,13 @@ export default function AddLinkPage() {
 
       setStep("processing_ai");
       const data = await res.json();
+
+      // Save to Firestore client-side (authenticated context satisfies security rules)
+      const insightId = await createInsight({ userId: user!.uid, ...data.insight });
       setStep("done");
 
       setTimeout(() => {
-        window.location.href = `/insight/${data.insightId}`;
+        window.location.href = `/insight/${insightId}`;
       }, 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");

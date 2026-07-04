@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
-import { getInsight, updateInsight, deleteInsight, toggleActionItem, createShare, getUserSettings, getUserInsights, incrementViewCount } from "@/lib/firestore";
+import { getInsight, updateInsight, deleteInsight, toggleActionItem, createShare, getUserSettings, getUserInsights, incrementViewCount, createInsight } from "@/lib/firestore";
 import { getRelatedInsights, type RelatedInsight } from "@/lib/intelligence";
 import { getPlatformLabel, formatDate } from "@/lib/utils";
 import { stripTimestamps } from "@/lib/transcript/clean";
@@ -175,13 +175,12 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
         body: JSON.stringify({
           url: insight.url,
           manualTranscript: insight.transcript.text,
-          userId: user.uid,
         }),
       });
       if (!res.ok) throw new Error("Re-process failed");
       const data = await res.json();
-      // Navigate to the newly created insight
-      router.push(`/insight/${data.insightId}`);
+      const newId = await createInsight({ userId: user.uid, ...data.insight });
+      router.push(`/insight/${newId}`);
       toast.success("Re-processed — new insight created");
     } catch {
       toast.error("Re-process failed");
