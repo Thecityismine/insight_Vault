@@ -216,7 +216,7 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[#F5F7FA] text-sm font-semibold">Insight Terminal</p>
-            <p className="text-[#66717F] text-xs font-mono mt-0.5">v1.0.0 — Phase 5</p>
+            <p className="text-[#66717F] text-xs font-mono mt-0.5">v1.0.0 — Phase 7</p>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-pulse" />

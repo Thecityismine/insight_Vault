@@ -99,6 +99,13 @@ export async function deleteInsight(id: string): Promise<void> {
   await deleteDoc(doc(db, INSIGHTS, id));
 }
 
+export async function incrementViewCount(id: string): Promise<void> {
+  const snap = await getDoc(doc(db, INSIGHTS, id));
+  if (!snap.exists()) return;
+  const current = (snap.data().viewCount as number) ?? 0;
+  await updateDoc(doc(db, INSIGHTS, id), { viewCount: current + 1 });
+}
+
 export async function toggleActionItem(
   insightId: string,
   actionItemId: string,
@@ -109,6 +116,20 @@ export async function toggleActionItem(
   await updateInsight(insightId, {
     actionItems: insight.actionItems.map((a) =>
       a.id === actionItemId ? { ...a, completed } : a
+    ),
+  });
+}
+
+export async function updateActionItemDueDate(
+  insightId: string,
+  actionItemId: string,
+  dueDate: string | undefined
+): Promise<void> {
+  const insight = await getInsight(insightId);
+  if (!insight) return;
+  await updateInsight(insightId, {
+    actionItems: insight.actionItems.map((a) =>
+      a.id === actionItemId ? { ...a, dueDate } : a
     ),
   });
 }

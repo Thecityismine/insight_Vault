@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Plus, Library, Zap, Tag, Settings, Terminal, X,
+  LayoutDashboard, Plus, Library, Zap, Tag, Settings, Terminal, X, Search, Newspaper,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,8 +10,10 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/add-link", label: "Add Link", icon: Plus },
   { href: "/library", label: "Library", icon: Library },
+  { href: "/search", label: "Ask Library", icon: Search },
   { href: "/action-board", label: "Action Board", icon: Zap },
   { href: "/categories", label: "Categories", icon: Tag },
+  { href: "/digest", label: "Weekly Digest", icon: Newspaper },
 ];
 
 interface SidebarProps {

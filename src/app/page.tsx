@@ -1,17 +1,19 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Zap, TrendingUp, Clock, Plus, ArrowRight } from "lucide-react";
+import { BookOpen, Zap, TrendingUp, Clock, Plus, ArrowRight, Search, Lightbulb } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/lib/auth";
-import { getDashboardStats, getRecentInsights } from "@/lib/firestore";
+import { getDashboardStats, getRecentInsights, getUserInsights } from "@/lib/firestore";
+import { getTopicTrends, getKnowledgeGaps } from "@/lib/intelligence";
 import { getPlatformLabel, formatRelativeTime } from "@/lib/utils";
 import type { Insight } from "@/types";
 
 interface Stats { totalInsights: number; actionItems: number; highValueIdeas: number; inProgress: number; }
+interface TopicTrend { topic: string; count: number; }
 
 function StatsSkeleton() {
   return (
@@ -31,15 +33,20 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recent, setRecent] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trends, setTrends] = useState<TopicTrend[]>([]);
+  const [gaps, setGaps] = useState<string[]>([]);
 
   useEffect(() => {
     if (!user) return;
     Promise.all([
       getDashboardStats(user.uid),
       getRecentInsights(user.uid, 5),
-    ]).then(([s, r]) => {
+      getUserInsights(user.uid),
+    ]).then(([s, r, all]) => {
       setStats(s);
       setRecent(r);
+      setTrends(getTopicTrends(all));
+      setGaps(getKnowledgeGaps(all));
     }).finally(() => setLoading(false));
   }, [user]);
 
@@ -107,41 +114,94 @@ export default function DashboardPage() {
           )}
         </Card>
 
-        <Card className="p-5">
-          <h2 className="text-[#F5F7FA] font-semibold text-sm mb-4">Quick Actions</h2>
-          <div className="space-y-1">
-            {[
-              { href: "/add-link", label: "Add YouTube Link", icon: Plus },
-              { href: "/add-link", label: "Add Podcast Link", icon: Plus },
-              { href: "/action-board", label: "View Action Board", icon: Zap },
-              { href: "/library", label: "Browse Library", icon: BookOpen },
-            ].map(({ href, label, icon: Icon }) => (
-              <Link key={label} href={href}>
-                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#A7B0BC] hover:bg-[#111821] hover:text-[#F5F7FA] transition-all text-left">
-                  <Icon size={14} className="text-[#00E676]" />{label}
-                </button>
-              </Link>
-            ))}
-          </div>
+        <div className="space-y-4">
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[#F5F7FA] font-semibold text-sm flex items-center gap-2">
+                <TrendingUp size={14} className="text-[#3B82F6]" />
+                Topic Trends
+              </h2>
+              <Link href="/digest" className="text-[#00E676] text-xs hover:underline">Digest</Link>
+            </div>
+            {trends.length === 0 ? (
+              <p className="text-[#3D4D5C] text-xs py-2">No data yet</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {trends.map(({ topic, count }, i) => (
+                  <div key={topic} className="flex items-center gap-1 px-2 py-1 rounded-full border border-[#3B82F6]/20 bg-[#3B82F6]/5" style={{ opacity: Math.max(0.4, 1 - i * 0.1) }}>
+                    <span className="text-[#3B82F6] text-[10px] font-medium">{topic}</span>
+                    <span className="text-[#3B82F6]/50 text-[9px] font-mono">{count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
 
-          <div className="mt-4 pt-4 border-t border-[#1E2A36]">
-            <p className="text-[#66717F] text-xs font-mono uppercase tracking-widest mb-2">System Status</p>
-            <div className="space-y-1.5">
+          {gaps.length > 0 && (
+            <Card className="p-5">
+              <h2 className="text-[#F5F7FA] font-semibold text-sm mb-3 flex items-center gap-2">
+                <Lightbulb size={14} className="text-[#F5C542]" />
+                Knowledge Gaps
+              </h2>
+              <p className="text-[#66717F] text-xs mb-3">Topics that appear in your insights but lack dedicated coverage:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {gaps.map((gap) => (
+                  <Link key={gap} href={`/search?q=${encodeURIComponent(gap)}`}>
+                    <div className="px-2.5 py-1 rounded-full border border-[#F5C542]/20 bg-[#F5C542]/5 text-[#F5C542] text-[10px] hover:bg-[#F5C542]/10 transition-colors cursor-pointer">
+                      {gap}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          <Card className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[#F5F7FA] font-semibold text-sm">Ask Library</h2>
+            </div>
+            <Link href="/search">
+              <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-[#1E2A36] hover:border-[#2E4052] transition-colors group">
+                <Search size={13} className="text-[#00E676]" />
+                <span className="text-[#66717F] text-sm group-hover:text-[#A7B0BC] transition-colors">What have I learned about…</span>
+              </div>
+            </Link>
+          </Card>
+
+          <Card className="p-5">
+            <h2 className="text-[#F5F7FA] font-semibold text-sm mb-3">Quick Actions</h2>
+            <div className="space-y-0.5">
               {[
-                { label: "Firebase", status: "connected" },
-                { label: "Auth", status: user ? "active" : "offline" },
-                { label: "AI Processing", status: "ready" },
-              ].map(({ label, status }) => (
-                <div key={label} className="flex items-center justify-between text-xs">
-                  <span className="text-[#A7B0BC]">{label}</span>
-                  <span className="flex items-center gap-1.5 text-[#00E676]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-pulse" />{status}
-                  </span>
-                </div>
+                { href: "/add-link", label: "Add YouTube Link", icon: Plus },
+                { href: "/action-board", label: "View Action Board", icon: Zap },
+                { href: "/library", label: "Browse Library", icon: BookOpen },
+                { href: "/digest", label: "Weekly Digest", icon: TrendingUp },
+              ].map(({ href, label, icon: Icon }) => (
+                <Link key={label} href={href}>
+                  <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-[#A7B0BC] hover:bg-[#111821] hover:text-[#F5F7FA] transition-all text-left">
+                    <Icon size={13} className="text-[#00E676]" />{label}
+                  </button>
+                </Link>
               ))}
             </div>
-          </div>
-        </Card>
+            <div className="mt-3 pt-3 border-t border-[#1E2A36]">
+              <div className="space-y-1">
+                {[
+                  { label: "Firebase", status: "connected" },
+                  { label: "Auth", status: user ? "active" : "offline" },
+                  { label: "AI Processing", status: "ready" },
+                ].map(({ label, status }) => (
+                  <div key={label} className="flex items-center justify-between text-xs">
+                    <span className="text-[#A7B0BC]">{label}</span>
+                    <span className="flex items-center gap-1.5 text-[#00E676]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-pulse" />{status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );

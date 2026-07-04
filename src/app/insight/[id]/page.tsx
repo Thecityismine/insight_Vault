@@ -12,7 +12,8 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
-import { getInsight, updateInsight, deleteInsight, toggleActionItem, createShare, getUserSettings } from "@/lib/firestore";
+import { getInsight, updateInsight, deleteInsight, toggleActionItem, createShare, getUserSettings, getUserInsights, incrementViewCount } from "@/lib/firestore";
+import { getRelatedInsights, type RelatedInsight } from "@/lib/intelligence";
 import { getPlatformLabel, formatDate } from "@/lib/utils";
 import { stripTimestamps } from "@/lib/transcript/clean";
 import { toPlainText, downloadMarkdown, printInsight } from "@/lib/export";
@@ -53,9 +54,19 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
   const [sharing, setSharing] = useState(false);
   const [notionExporting, setNotionExporting] = useState(false);
 
+  // Related insights
+  const [related, setRelated] = useState<RelatedInsight[]>([]);
+
   useEffect(() => {
-    getInsight(id).then(setInsight).finally(() => setLoading(false));
-  }, [id]);
+    getInsight(id).then(async (ins) => {
+      setInsight(ins);
+      if (ins && user) {
+        incrementViewCount(id).catch(() => {});
+        const all = await getUserInsights(user.uid);
+        setRelated(getRelatedInsights(ins, all));
+      }
+    }).finally(() => setLoading(false));
+  }, [id, user]);
 
   useEffect(() => {
     if (editingTitle) titleRef.current?.focus();
@@ -506,6 +517,27 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
           )}
         </div>
       </div>
+
+      {/* ── Related Insights ── */}
+      {related.length > 0 && (
+        <div>
+          <p className="text-[#66717F] text-xs font-mono uppercase tracking-widest mb-3 px-1">Related Insights</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {related.map(({ insight: rel, reasons }) => (
+              <Link key={rel.id} href={`/insight/${rel.id}`}>
+                <div className="p-4 rounded-xl border border-[#1E2A36] hover:border-[#2E4052] hover:bg-[#111821] transition-all group">
+                  <p className="text-sm text-[#A7B0BC] group-hover:text-[#F5F7FA] font-medium line-clamp-2 mb-2 transition-colors">
+                    {rel.title}
+                  </p>
+                  {reasons[0] && (
+                    <p className="text-[10px] text-[#3D4D5C] line-clamp-1">{reasons[0]}</p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Split panels ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

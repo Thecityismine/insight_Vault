@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Zap, Plus, CheckSquare, Square, ExternalLink } from "lucide-react";
+import { Zap, Plus, CheckSquare, Square, ExternalLink, Calendar, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/lib/auth";
-import { getUserInsights, toggleActionItem } from "@/lib/firestore";
-import type { Insight, ActionItem } from "@/types";
+import { getUserInsights, toggleActionItem, updateActionItemDueDate } from "@/lib/firestore";
+import type { ActionItem } from "@/types";
 import toast from "react-hot-toast";
 
 interface FlatAction extends ActionItem {
@@ -17,10 +17,27 @@ interface FlatAction extends ActionItem {
 
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
 
+function isOverdue(dueDate?: string): boolean {
+  if (!dueDate) return false;
+  return new Date(dueDate) < new Date();
+}
+
+function formatDueDate(dueDate: string): string {
+  const d = new Date(dueDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diff = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  if (diff < 0) return `${Math.abs(diff)}d overdue`;
+  if (diff === 0) return "Due today";
+  if (diff === 1) return "Due tomorrow";
+  return `Due in ${diff}d`;
+}
+
 export default function ActionBoardPage() {
   const { user } = useAuth();
   const [actions, setActions] = useState<FlatAction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pickingDueDate, setPickingDueDate] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -53,8 +70,22 @@ export default function ActionBoardPage() {
     }
   }
 
+  async function handleDueDate(insightId: string, actionId: string, dueDate: string) {
+    const parsed = dueDate || undefined;
+    setActions((prev) =>
+      prev.map((a) => (a.id === actionId ? { ...a, dueDate: parsed } : a))
+    );
+    setPickingDueDate(null);
+    try {
+      await updateActionItemDueDate(insightId, actionId, parsed);
+    } catch {
+      toast.error("Failed to save due date");
+    }
+  }
+
   const pending = actions.filter((a) => !a.completed);
   const done = actions.filter((a) => a.completed);
+  const overdue = pending.filter((a) => isOverdue(a.dueDate));
 
   const byPriority = (priority: "high" | "medium" | "low") =>
     pending.filter((a) => a.priority === priority);
@@ -71,6 +102,11 @@ export default function ActionBoardPage() {
         </div>
         {!loading && (
           <div className="flex items-center gap-2">
+            {overdue.length > 0 && (
+              <Badge variant="red">
+                <AlertTriangle size={10} className="mr-1" />{overdue.length} overdue
+              </Badge>
+            )}
             <Badge variant="gold">{pending.length} pending</Badge>
             <Badge variant="muted">{done.length} completed</Badge>
           </div>
@@ -116,27 +152,68 @@ export default function ActionBoardPage() {
                     <p className="text-[#3D4D5C] text-xs text-center py-6">No {priority} priority tasks</p>
                   ) : (
                     <div className="space-y-2">
-                      {items.map((action) => (
-                        <div key={action.id} className="group p-3 rounded-xl border border-[#1E2A36] hover:border-[#2E4052] transition-colors">
-                          <div className="flex items-start gap-2.5">
-                            <button
-                              onClick={() => handleToggle(action.insightId, action.id, action.completed)}
-                              className="mt-0.5 flex-shrink-0 text-[#66717F] hover:text-[#00E676] transition-colors"
-                            >
-                              {action.completed
-                                ? <CheckSquare size={15} className="text-[#00E676]" />
-                                : <Square size={15} />}
-                            </button>
-                            <p className="text-[#A7B0BC] text-xs leading-relaxed flex-1">{action.text}</p>
+                      {items.map((action) => {
+                        const overdue = isOverdue(action.dueDate);
+                        return (
+                          <div
+                            key={action.id}
+                            className={`group p-3 rounded-xl border transition-colors ${
+                              overdue
+                                ? "border-[#EF4444]/30 bg-[#EF4444]/5"
+                                : "border-[#1E2A36] hover:border-[#2E4052]"
+                            }`}
+                          >
+                            <div className="flex items-start gap-2.5">
+                              <button
+                                onClick={() => handleToggle(action.insightId, action.id, action.completed)}
+                                className="mt-0.5 flex-shrink-0 text-[#66717F] hover:text-[#00E676] transition-colors"
+                              >
+                                {action.completed
+                                  ? <CheckSquare size={15} className="text-[#00E676]" />
+                                  : <Square size={15} />}
+                              </button>
+                              <p className="text-[#A7B0BC] text-xs leading-relaxed flex-1">{action.text}</p>
+                            </div>
+
+                            <div className="mt-2 ml-6 flex items-center justify-between gap-2">
+                              <Link href={`/insight/${action.insightId}`} className="text-[#3D4D5C] text-xs hover:text-[#66717F] flex items-center gap-1 transition-colors min-w-0">
+                                <ExternalLink size={10} className="flex-shrink-0" />
+                                <span className="line-clamp-1">{action.insightTitle}</span>
+                              </Link>
+
+                              {/* Due date */}
+                              {pickingDueDate === action.id ? (
+                                <input
+                                  type="date"
+                                  autoFocus
+                                  defaultValue={action.dueDate?.slice(0, 10) ?? ""}
+                                  onBlur={(e) => handleDueDate(action.insightId, action.id, e.target.value)}
+                                  onChange={(e) => { if (e.target.value) handleDueDate(action.insightId, action.id, e.target.value); }}
+                                  className="text-[10px] bg-[#111821] border border-[#1E2A36] rounded px-1.5 py-0.5 text-[#A7B0BC] focus:outline-none focus:border-[#00E676]/40 w-28"
+                                />
+                              ) : action.dueDate ? (
+                                <button
+                                  onClick={() => setPickingDueDate(action.id)}
+                                  className={`text-[10px] flex items-center gap-1 flex-shrink-0 transition-colors ${
+                                    overdue ? "text-[#EF4444]" : "text-[#66717F] hover:text-[#A7B0BC]"
+                                  }`}
+                                >
+                                  {overdue && <AlertTriangle size={9} />}
+                                  <Calendar size={9} />
+                                  {formatDueDate(action.dueDate)}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => setPickingDueDate(action.id)}
+                                  className="opacity-0 group-hover:opacity-100 text-[#3D4D5C] hover:text-[#66717F] transition-all text-[10px] flex items-center gap-1 flex-shrink-0"
+                                >
+                                  <Calendar size={9} />Due date
+                                </button>
+                              )}
+                            </div>
                           </div>
-                          <div className="mt-2 ml-6">
-                            <Link href={`/insight/${action.insightId}`} className="text-[#3D4D5C] text-xs hover:text-[#66717F] flex items-center gap-1 transition-colors">
-                              <ExternalLink size={10} />
-                              <span className="line-clamp-1">{action.insightTitle}</span>
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </Card>

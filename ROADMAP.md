@@ -87,15 +87,15 @@ Check off tasks as they're done.
 
 ---
 
-## Phase 7 — Intelligence Layer
+## Phase 7 — Intelligence Layer ✅
 > Make the app smarter over time — connections between insights, patterns, memory.
 
-- [ ] "Related Insights" section on detail page (vector similarity or tag overlap)
-- [ ] Semantic search — "what have I learned about X?" powered by embeddings
-- [ ] Weekly digest email — top insights and pending actions from the week
-- [ ] Action item due dates and reminders
-- [ ] Insight score trends — track which topics you engage with most
-- [ ] "Knowledge gaps" — topics mentioned but not yet in your library
+- [x] "Related Insights" section on detail page (tag/category overlap scoring)
+- [x] Semantic search — "Ask your library" page powered by GPT-4o-mini RAG
+- [x] Weekly digest — in-app view with week's insights, pending actions, topic map
+- [x] Action item due dates and overdue indicators on Action Board
+- [x] Insight score trends — topic frequency map on Dashboard and Digest
+- [x] "Knowledge gaps" — topics mentioned in key points but not yet covered
 
 ---
 

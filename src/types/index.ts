@@ -25,6 +25,7 @@ export interface ActionItem {
   priority: "high" | "medium" | "low";
   completed: boolean;
   createdAt: string;
+  dueDate?: string;
 }
 
 export interface Insight {
@@ -47,6 +48,7 @@ export interface Insight {
   transcript?: TranscriptData;
   confidenceScore: number;
   starred: boolean;
+  viewCount?: number;
   createdAt: string;
   updatedAt: string;
 }

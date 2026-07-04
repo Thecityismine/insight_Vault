@@ -14,6 +14,8 @@ const PAGE_TITLES: Record<string, string> = {
   "/categories": "Categories",
   "/add-link": "Add Link",
   "/settings": "Settings",
+  "/search": "Ask Library",
+  "/digest": "Weekly Digest",
 };
 
 export function AppShell({ children }: { children: React.ReactNode }) {
