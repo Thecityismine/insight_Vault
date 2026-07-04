@@ -75,15 +75,15 @@ Check off tasks as they're done.
 
 ---
 
-## Phase 6 — Export & Sharing
+## Phase 6 — Export & Sharing ✅
 > Get your insights out of the app and into your workflow.
 
-- [ ] Export insight to Markdown file (download)
-- [ ] Export insight to PDF (formatted)
-- [ ] Push insight to Notion (Notion API integration)
-- [ ] Copy insight as formatted text (for emails, docs, etc.)
-- [ ] Public share link for a single insight (read-only)
-- [ ] Export full library as JSON backup
+- [x] Export insight to Markdown file (download)
+- [x] Export insight to PDF (formatted)
+- [x] Push insight to Notion (Notion API integration)
+- [x] Copy insight as formatted text (for emails, docs, etc.)
+- [x] Public share link for a single insight (read-only)
+- [x] Export full library as JSON backup
 
 ---
 
