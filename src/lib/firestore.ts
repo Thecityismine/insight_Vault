@@ -56,15 +56,18 @@ function sortByDate(insights: Insight[]): Insight[] {
   );
 }
 
+function dropUndefined(obj: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+}
+
 export async function createInsight(
   data: Omit<Insight, "id" | "createdAt" | "updatedAt">
 ): Promise<string> {
   const now = new Date().toISOString();
-  const ref = await addDoc(collection(db, INSIGHTS), {
-    ...data,
-    createdAt: now,
-    updatedAt: now,
-  });
+  const ref = await addDoc(
+    collection(db, INSIGHTS),
+    dropUndefined({ ...data, createdAt: now, updatedAt: now })
+  );
   return ref.id;
 }
 
@@ -89,10 +92,10 @@ export async function getRecentInsights(userId: string, count = 5): Promise<Insi
 }
 
 export async function updateInsight(id: string, data: Partial<Insight>): Promise<void> {
-  await updateDoc(doc(db, INSIGHTS, id), {
-    ...data,
-    updatedAt: new Date().toISOString(),
-  });
+  await updateDoc(
+    doc(db, INSIGHTS, id),
+    dropUndefined({ ...data, updatedAt: new Date().toISOString() })
+  );
 }
 
 export async function deleteInsight(id: string): Promise<void> {
