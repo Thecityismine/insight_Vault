@@ -47,17 +47,17 @@ Check off tasks as they're done.
 
 ---
 
-## Phase 4 — Platform & Transcript Quality
+## Phase 4 — Platform & Transcript Quality ✅
 > Improve how transcripts are fetched and add metadata so insights look rich.
 
-- [ ] Fetch YouTube video metadata (title, thumbnail, duration) via oEmbed API
-- [ ] Display thumbnail on insight card and detail page
-- [ ] Improve YouTube caption extraction (handle auto-captions, age-restricted, etc.)
-- [ ] Add `youtube-transcript` npm package as a more reliable caption source
-- [ ] TikTok transcript — audio download + Whisper fallback
-- [ ] Podcast/RSS — extract audio URL from feed and run Whisper
-- [ ] Preserve timestamps in transcript display (toggle on/off)
-- [ ] Strip filler words / clean up auto-captions before sending to AI
+- [x] Fetch YouTube video metadata (title, thumbnail, duration) via oEmbed API
+- [x] Display thumbnail on insight card and detail page
+- [x] Improve YouTube caption extraction (handle auto-captions, age-restricted, etc.)
+- [x] Add `youtube-transcript` npm package as a more reliable caption source
+- [x] TikTok transcript — audio download + Whisper fallback
+- [x] Podcast/RSS — extract audio URL from feed and run Whisper
+- [x] Preserve timestamps in transcript display (toggle on/off)
+- [x] Strip filler words / clean up auto-captions before sending to AI
 
 ---
 
