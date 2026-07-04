@@ -32,11 +32,12 @@ export async function POST(req: NextRequest) {
   try {
     const { url, manualTranscript, userId = "anonymous" } = await req.json();
 
-    if (!url) {
-      return NextResponse.json({ error: "URL is required" }, { status: 400 });
+    if (!url && !manualTranscript?.trim()) {
+      return NextResponse.json({ error: "URL or transcript is required" }, { status: 400 });
     }
 
-    const meta = parseLink(url);
+    const isManualOnly = url === "manual://transcript" || !url;
+    const meta = isManualOnly ? { platform: "other" as const, url: "manual://transcript" } : parseLink(url);
 
     // Get transcript
     let transcriptData;
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
-          content: `Platform: ${meta.platform}\nURL: ${url}\n\nTranscript:\n${transcriptData.text.slice(0, 12000)}`,
+          content: `Platform: ${meta.platform}\nURL: ${url ?? "manual"}\n\nTranscript:\n${transcriptData.text.slice(0, 40000)}`,
         },
       ],
       response_format: { type: "json_object" },
