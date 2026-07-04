@@ -61,17 +61,17 @@ Check off tasks as they're done.
 
 ---
 
-## Phase 5 — UX Polish
+## Phase 5 — UX Polish ✅
 > Make the app feel finished and professional.
 
-- [ ] Loading skeletons on Library, Dashboard, Action Board
-- [ ] Error boundary components (graceful crash pages)
-- [ ] Mobile responsive layout (collapsible sidebar, touch-friendly)
-- [ ] Settings page saves preferences to Firestore (auto-categorize toggle, etc.)
-- [ ] Toast notifications for: insight saved, deleted, action item toggled
-- [ ] Keyboard shortcut `Cmd/Ctrl + K` opens link input from anywhere
-- [ ] Favicon and Open Graph meta tags
-- [ ] Page titles update per route
+- [x] Loading skeletons on Library, Dashboard, Action Board
+- [x] Error boundary components (graceful crash pages)
+- [x] Mobile responsive layout (collapsible sidebar, touch-friendly)
+- [x] Settings page saves preferences to Firestore (auto-categorize toggle, etc.)
+- [x] Toast notifications for: insight saved, deleted, action item toggled
+- [x] Keyboard shortcut `Cmd/Ctrl + K` opens link input from anywhere
+- [x] Favicon and Open Graph meta tags
+- [x] Page titles update per route
 
 ---
 
