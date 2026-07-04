@@ -5,45 +5,45 @@ Check off tasks as they're done.
 
 ---
 
-## Phase 1 — Auth & Security
+## Phase 1 — Auth & Security ✅
 > Everything runs as "anonymous" right now. This locks it down to your account and protects Firestore.
 
-- [ ] Add Firebase Auth (Google OAuth + email/password)
-- [ ] Create `AuthProvider` context and `useUser` hook
-- [ ] Build login page (`/login`) with Google sign-in button
-- [ ] Protect all routes — redirect to `/login` if not authenticated
-- [ ] Wire real `userId` from auth into every Firestore write
-- [ ] Write Firestore security rules (users can only read/write their own data)
-- [ ] Deploy security rules via Firebase CLI
-- [ ] Show user avatar + sign-out button in TopBar
+- [x] Add Firebase Auth (Google OAuth + email/password)
+- [x] Create `AuthProvider` context and `useUser` hook
+- [x] Build login page (`/login`) with Google sign-in button
+- [x] Protect all routes — redirect to `/login` if not authenticated
+- [x] Wire real `userId` from auth into every Firestore write
+- [x] Write Firestore security rules (users can only read/write their own data)
+- [x] Deploy security rules via Firebase CLI
+- [x] Show user avatar + sign-out button in TopBar
 
 ---
 
-## Phase 2 — Live Data
+## Phase 2 — Live Data ✅
 > The dashboard, library, and action board all show static/empty state. This makes the app actually work end-to-end.
 
-- [ ] Dashboard fetches real stats from Firestore (`getDashboardStats`)
-- [ ] Dashboard "Recent Insights" section pulls live data
-- [ ] Library page loads and renders all insights as `InsightCard` grid
-- [ ] Library search filters by title/summary in real time
-- [ ] Library platform filter actually queries Firestore
-- [ ] Action Board loads all pending action items across every insight
-- [ ] Action Board toggle (complete/incomplete) saves to Firestore
-- [ ] Categories page groups insights by their `categories` field
-- [ ] TopBar search bar works across all pages
+- [x] Dashboard fetches real stats from Firestore (`getDashboardStats`)
+- [x] Dashboard "Recent Insights" section pulls live data
+- [x] Library page loads and renders all insights as `InsightCard` grid
+- [x] Library search filters by title/summary in real time
+- [x] Library platform filter actually queries Firestore
+- [x] Action Board loads all pending action items across every insight
+- [x] Action Board toggle (complete/incomplete) saves to Firestore
+- [x] Categories page groups insights by their `categories` field
+- [x] TopBar search bar works across all pages
 
 ---
 
-## Phase 3 — Insight Management
+## Phase 3 — Insight Management ✅
 > Users need to manage what they've saved — edit, delete, re-run.
 
-- [ ] Delete insight (with confirmation prompt)
-- [ ] Edit insight title inline on detail page
-- [ ] Edit/add tags and categories on detail page
-- [ ] Star / mark insight as "high value"
-- [ ] Re-process button — run AI again on the same saved transcript
-- [ ] Copy transcript to clipboard button on detail page
-- [ ] Show processing warnings on detail page if any fallback was used
+- [x] Delete insight (with confirmation prompt)
+- [x] Edit insight title inline on detail page
+- [x] Edit/add tags and categories on detail page
+- [x] Star / mark insight as "high value"
+- [x] Re-process button — run AI again on the same saved transcript
+- [x] Copy transcript to clipboard button on detail page
+- [x] Show processing warnings on detail page if any fallback was used
 
 ---
 
