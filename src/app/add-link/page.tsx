@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
+import { useAuth } from "@/lib/auth";
 import {
   Link2,
   Loader2,
@@ -31,6 +32,7 @@ function wordCount(text: string) {
 }
 
 export default function AddLinkPage() {
+  const { user } = useAuth();
   const [mode, setMode] = useState<Mode>("link");
   const [url, setUrl] = useState("");
   const [detected, setDetected] = useState<string | null>(null);
@@ -64,8 +66,8 @@ export default function AddLinkPage() {
       const body: Record<string, string> = {};
       if (hasUrl) body.url = url.trim();
       if (hasTranscript) body.manualTranscript = transcript.trim();
-      // In transcript mode without a URL, use a placeholder so the API doesn't reject it
       if (!hasUrl) body.url = "manual://transcript";
+      if (user) body.userId = user.uid;
 
       const res = await fetch("/api/process", {
         method: "POST",

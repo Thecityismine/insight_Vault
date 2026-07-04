@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Insights — users can only access their own documents
+    match /insights/{insightId} {
+      // Read: must be signed in and own the document
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+
+      // Create: must be signed in and setting userId to their own uid
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid;
+
+      // Update: must be signed in and own the document
+      allow update: if request.auth != null
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid;
+
+      // Delete: must be signed in and own the document
+      allow delete: if request.auth != null
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // Block everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

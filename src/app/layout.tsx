@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { TopBar } from "@/components/layout/TopBar";
+import { AuthProvider } from "@/lib/auth";
+import { AppShell } from "@/components/layout/AppShell";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -12,11 +12,7 @@ export const metadata: Metadata = {
   description: "Your private intelligence dashboard for ideas",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -26,13 +22,9 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
-        <div className="flex h-screen overflow-hidden bg-[#05070A]">
-          <Sidebar />
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <TopBar />
-            <main className="flex-1 overflow-y-auto p-6">{children}</main>
-          </div>
-        </div>
+        <AuthProvider>
+          <AppShell>{children}</AppShell>
+        </AuthProvider>
         <Toaster
           position="bottom-right"
           toastOptions={{
