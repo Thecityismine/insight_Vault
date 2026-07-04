@@ -5,7 +5,9 @@ import { fetchTranscript } from "@/lib/transcript";
 import { createInsight } from "@/lib/firestore";
 import type { ActionItem, Platform } from "@/types";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+function getOpenAI() {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
 
 const SYSTEM_PROMPT = `You are an expert insight extractor for a personal intelligence dashboard.
 Given a transcript, extract structured insights in JSON format.
@@ -65,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Extract insights with AI
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
