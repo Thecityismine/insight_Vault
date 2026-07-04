@@ -3,7 +3,8 @@ import { use, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft, ExternalLink, Clock, CheckSquare, Square,
   AlertCircle, Star, Trash2, Copy, RefreshCw, Pencil,
-  Check, X, Plus, Loader2, Timer,
+  Check, X, Plus, Loader2, Timer, Download, Share2,
+  FileText, Printer, Link2, BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,9 +12,10 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
-import { getInsight, updateInsight, deleteInsight, toggleActionItem } from "@/lib/firestore";
+import { getInsight, updateInsight, deleteInsight, toggleActionItem, createShare, getUserSettings } from "@/lib/firestore";
 import { getPlatformLabel, formatDate } from "@/lib/utils";
 import { stripTimestamps } from "@/lib/transcript/clean";
+import { toPlainText, downloadMarkdown, printInsight } from "@/lib/export";
 import type { Insight } from "@/types";
 import toast from "react-hot-toast";
 
@@ -44,6 +46,12 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
 
   // Transcript view
   const [showTimestamps, setShowTimestamps] = useState(false);
+
+  // Export / share
+  const [exportOpen, setExportOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [notionExporting, setNotionExporting] = useState(false);
 
   useEffect(() => {
     getInsight(id).then(setInsight).finally(() => setLoading(false));
@@ -171,6 +179,79 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
     }
   }
 
+  // ── Export / Share ────────────────────────────────────────────────────────
+  function handleCopyText() {
+    if (!insight) return;
+    navigator.clipboard.writeText(toPlainText(insight));
+    toast.success("Copied to clipboard");
+    setExportOpen(false);
+  }
+
+  function handleDownloadMarkdown() {
+    if (!insight) return;
+    downloadMarkdown(insight);
+    setExportOpen(false);
+  }
+
+  function handlePrint() {
+    if (!insight) return;
+    printInsight(insight);
+    setExportOpen(false);
+  }
+
+  async function handleShare() {
+    if (!insight) return;
+    if (shareUrl) {
+      navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied");
+      setExportOpen(false);
+      return;
+    }
+    setSharing(true);
+    try {
+      const token = await createShare(insight);
+      const url = `${window.location.origin}/share/${token}`;
+      setShareUrl(url);
+      navigator.clipboard.writeText(url);
+      toast.success("Share link copied");
+    } catch {
+      toast.error("Failed to create share link");
+    } finally {
+      setSharing(false);
+      setExportOpen(false);
+    }
+  }
+
+  async function handleNotionExport() {
+    if (!insight || !user) return;
+    setNotionExporting(true);
+    setExportOpen(false);
+    try {
+      const settings = await getUserSettings(user.uid);
+      const { notionToken, notionPageId } = settings as typeof settings & { notionToken?: string; notionPageId?: string };
+      if (!notionToken || !notionPageId) {
+        toast.error("Add your Notion token and page ID in Settings first");
+        return;
+      }
+      const res = await fetch("/api/export/notion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notionToken, parentPageId: notionPageId, insight }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error);
+      }
+      const data = await res.json();
+      toast.success("Sent to Notion");
+      if (data.url) window.open(data.url, "_blank");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Notion export failed");
+    } finally {
+      setNotionExporting(false);
+    }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -263,6 +344,50 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
           >
             <Star size={14} fill={insight.starred ? "currentColor" : "none"} />
           </button>
+
+          {/* Export dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setExportOpen((v) => !v)}
+              title="Export / Share"
+              className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-all ${
+                exportOpen ? "bg-[#3B82F6]/10 border-[#3B82F6]/30 text-[#3B82F6]" : "border-[#1E2A36] text-[#66717F] hover:text-[#3B82F6] hover:border-[#3B82F6]/30"
+              }`}
+            >
+              {notionExporting ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+            </button>
+            {exportOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setExportOpen(false)} />
+                <div className="absolute right-0 top-10 z-20 w-52 bg-[#0B0F14] border border-[#1E2A36] rounded-xl shadow-2xl shadow-black/50 overflow-hidden">
+                  <div className="px-3 py-2 border-b border-[#1E2A36]">
+                    <p className="text-[#66717F] text-[10px] font-mono uppercase tracking-widest">Export & Share</p>
+                  </div>
+                  {[
+                    { icon: Copy, label: "Copy as text", action: handleCopyText },
+                    { icon: FileText, label: "Download Markdown", action: handleDownloadMarkdown },
+                    { icon: Printer, label: "Download PDF", action: handlePrint },
+                    { icon: Link2, label: shareUrl ? "Copy share link" : sharing ? "Creating link…" : "Create share link", action: handleShare },
+                    { icon: BookOpen, label: notionExporting ? "Sending…" : "Send to Notion", action: handleNotionExport },
+                  ].map(({ icon: Icon, label, action }) => (
+                    <button
+                      key={label}
+                      onClick={action}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-[#A7B0BC] hover:bg-[#111821] hover:text-[#F5F7FA] transition-colors text-left"
+                    >
+                      <Icon size={13} className="text-[#66717F] flex-shrink-0" />
+                      {label}
+                    </button>
+                  ))}
+                  {shareUrl && (
+                    <div className="px-3 py-2 border-t border-[#1E2A36]">
+                      <p className="text-[#66717F] text-[10px] font-mono truncate">{shareUrl}</p>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Re-process */}
           {insight.transcript?.text && (

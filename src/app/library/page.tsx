@@ -1,12 +1,13 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { Search, Plus, Loader2 } from "lucide-react";
+import { Search, Plus, Download } from "lucide-react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { InsightCard } from "@/components/insight/InsightCard";
 import { useAuth } from "@/lib/auth";
 import { getUserInsights } from "@/lib/firestore";
+import { downloadLibraryJSON } from "@/lib/export";
 import type { Insight } from "@/types";
 
 const PLATFORMS = ["All", "YouTube", "TikTok", "X Spaces", "Podcast", "Other"];
@@ -60,7 +61,18 @@ export default function LibraryPage() {
             {loading ? "Loading..." : `${insights.length} insight${insights.length !== 1 ? "s" : ""} collected`}
           </p>
         </div>
-        <Link href="/add-link"><Button><Plus size={16} />Add Link</Button></Link>
+        <div className="flex items-center gap-2">
+          {insights.length > 0 && (
+            <button
+              onClick={() => downloadLibraryJSON(insights)}
+              title="Export library as JSON"
+              className="w-9 h-9 rounded-xl border border-[#1E2A36] flex items-center justify-center text-[#66717F] hover:text-[#00E676] hover:border-[#00E676]/30 transition-all"
+            >
+              <Download size={15} />
+            </button>
+          )}
+          <Link href="/add-link"><Button><Plus size={16} />Add Link</Button></Link>
+        </div>
       </div>
 
       {/* Filters */}

@@ -18,6 +18,8 @@ export interface UserSettings {
   extractActionItems: boolean;
   audioTranscription: boolean;
   stripFillerWords: boolean;
+  notionToken?: string;
+  notionPageId?: string;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -110,6 +112,59 @@ export async function toggleActionItem(
     ),
   });
 }
+
+// ── Shares ────────────────────────────────────────────────────────────────────
+
+const SHARES = "shares";
+
+export interface SharedInsight {
+  token: string;
+  title: string;
+  summary: string;
+  keyPoints: string[];
+  actionItems: ActionItem[];
+  implementationFramework: string;
+  toolsMentioned: string[];
+  personalRelevance: string;
+  categories: string[];
+  tags: string[];
+  platform: string;
+  confidenceScore: number;
+  thumbnail?: string;
+  url?: string;
+  sharedAt: string;
+}
+
+export async function createShare(insight: Insight): Promise<string> {
+  const token = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+  const shareData: SharedInsight = {
+    token,
+    title: insight.title,
+    summary: insight.summary,
+    keyPoints: insight.keyPoints,
+    actionItems: insight.actionItems,
+    implementationFramework: insight.implementationFramework,
+    toolsMentioned: insight.toolsMentioned ?? [],
+    personalRelevance: insight.personalRelevance,
+    categories: insight.categories ?? [],
+    tags: insight.tags ?? [],
+    platform: insight.platform,
+    confidenceScore: insight.confidenceScore,
+    thumbnail: insight.thumbnail,
+    url: insight.url,
+    sharedAt: new Date().toISOString(),
+  };
+  await setDoc(doc(db, SHARES, token), shareData);
+  return token;
+}
+
+export async function getSharedInsight(token: string): Promise<SharedInsight | null> {
+  const snap = await getDoc(doc(db, SHARES, token));
+  if (!snap.exists()) return null;
+  return snap.data() as SharedInsight;
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 
 export async function getDashboardStats(userId: string) {
   const insights = await getUserInsights(userId);

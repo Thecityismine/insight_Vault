@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/lib/auth";
 import { getUserSettings, saveUserSettings } from "@/lib/firestore";
 import type { UserSettings } from "@/lib/firestore";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, ExternalLink } from "lucide-react";
 import toast from "react-hot-toast";
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
@@ -58,11 +58,31 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [saving, setSaving] = useState<keyof UserSettings | null>(null);
+  const [notionToken, setNotionToken] = useState("");
+  const [notionPageId, setNotionPageId] = useState("");
+  const [savingNotion, setSavingNotion] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    getUserSettings(user.uid).then(setSettings);
+    getUserSettings(user.uid).then((s) => {
+      setSettings(s);
+      setNotionToken(s.notionToken ?? "");
+      setNotionPageId(s.notionPageId ?? "");
+    });
   }, [user]);
+
+  async function saveNotionSettings() {
+    if (!user) return;
+    setSavingNotion(true);
+    try {
+      await saveUserSettings(user.uid, { notionToken, notionPageId });
+      toast.success("Notion settings saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setSavingNotion(false);
+    }
+  }
 
   async function handleToggle(key: keyof UserSettings, value: boolean) {
     if (!user || !settings) return;
@@ -136,6 +156,58 @@ export default function SettingsPage() {
             </div>
             <Badge variant="green">Connected</Badge>
           </div>
+        </div>
+      </Card>
+
+      {/* Notion Integration */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[#F5F7FA] font-semibold text-sm">Notion Integration</h2>
+          <a
+            href="https://www.notion.so/my-integrations"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#3B82F6] text-xs flex items-center gap-1 hover:underline"
+          >
+            Create token <ExternalLink size={10} />
+          </a>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="text-[#66717F] text-xs uppercase tracking-widest font-mono block mb-1.5">
+              Integration Token
+            </label>
+            <input
+              type="password"
+              value={notionToken}
+              onChange={(e) => setNotionToken(e.target.value)}
+              placeholder="secret_..."
+              className="w-full bg-[#0B0F14] border border-[#1E2A36] rounded-xl px-4 py-2.5 text-sm text-[#F5F7FA] placeholder:text-[#3D4D5C] focus:outline-none focus:border-[#2E4052] transition-colors font-mono"
+            />
+          </div>
+          <div>
+            <label className="text-[#66717F] text-xs uppercase tracking-widest font-mono block mb-1.5">
+              Parent Page ID
+            </label>
+            <input
+              type="text"
+              value={notionPageId}
+              onChange={(e) => setNotionPageId(e.target.value)}
+              placeholder="32-character page ID from the URL"
+              className="w-full bg-[#0B0F14] border border-[#1E2A36] rounded-xl px-4 py-2.5 text-sm text-[#F5F7FA] placeholder:text-[#3D4D5C] focus:outline-none focus:border-[#2E4052] transition-colors font-mono"
+            />
+            <p className="text-[#66717F] text-xs mt-1">
+              Share a Notion page with your integration, then paste its ID here.
+            </p>
+          </div>
+          <button
+            onClick={saveNotionSettings}
+            disabled={savingNotion}
+            className="px-4 py-2 rounded-xl bg-[#3B82F6]/10 border border-[#3B82F6]/20 text-[#3B82F6] text-sm hover:bg-[#3B82F6]/20 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {savingNotion ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+            Save Notion settings
+          </button>
         </div>
       </Card>
 

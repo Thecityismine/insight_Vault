@@ -47,6 +47,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setSidebarOpen(false);
   }, [pathname]);
 
+  // Share pages are public — no auth or shell needed
+  if (pathname.startsWith("/share")) return <>{children}</>;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#05070A] flex items-center justify-center">
