@@ -56,9 +56,6 @@ function sortByDate(insights: Insight[]): Insight[] {
   );
 }
 
-function dropUndefined(obj: Record<string, unknown>): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
-}
 
 export async function createInsight(
   data: Omit<Insight, "id" | "createdAt" | "updatedAt">
@@ -66,7 +63,7 @@ export async function createInsight(
   const now = new Date().toISOString();
   const ref = await addDoc(
     collection(db, INSIGHTS),
-    dropUndefined({ ...data, createdAt: now, updatedAt: now })
+    JSON.parse(JSON.stringify({ ...data, createdAt: now, updatedAt: now }))
   );
   return ref.id;
 }
@@ -94,7 +91,7 @@ export async function getRecentInsights(userId: string, count = 5): Promise<Insi
 export async function updateInsight(id: string, data: Partial<Insight>): Promise<void> {
   await updateDoc(
     doc(db, INSIGHTS, id),
-    dropUndefined({ ...data, updatedAt: new Date().toISOString() })
+    JSON.parse(JSON.stringify({ ...data, updatedAt: new Date().toISOString() }))
   );
 }
 
@@ -174,11 +171,11 @@ export async function createShare(insight: Insight): Promise<string> {
     tags: insight.tags ?? [],
     platform: insight.platform,
     confidenceScore: insight.confidenceScore,
-    thumbnail: insight.thumbnail,
-    url: insight.url,
+    ...(insight.thumbnail ? { thumbnail: insight.thumbnail } : {}),
+    ...(insight.url ? { url: insight.url } : {}),
     sharedAt: new Date().toISOString(),
   };
-  await setDoc(doc(db, SHARES, token), shareData);
+  await setDoc(doc(db, SHARES, token), JSON.parse(JSON.stringify(shareData)));
   return token;
 }
 
