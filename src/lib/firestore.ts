@@ -61,10 +61,32 @@ export async function createInsight(
   data: Omit<Insight, "id" | "createdAt" | "updatedAt">
 ): Promise<string> {
   const now = new Date().toISOString();
-  const ref = await addDoc(
-    collection(db, INSIGHTS),
-    JSON.parse(JSON.stringify({ ...data, createdAt: now, updatedAt: now }))
-  );
+  // Build payload field-by-field — Firestore rejects undefined values and
+  // optional fields (thumbnail, transcript, etc.) must be omitted when absent
+  const payload: Record<string, unknown> = {
+    userId: data.userId,
+    url: data.url,
+    platform: data.platform,
+    title: data.title,
+    summary: data.summary,
+    keyPoints: data.keyPoints,
+    actionItems: data.actionItems,
+    implementationFramework: data.implementationFramework,
+    toolsMentioned: data.toolsMentioned ?? [],
+    personalRelevance: data.personalRelevance,
+    categories: data.categories ?? [],
+    tags: data.tags ?? [],
+    status: data.status,
+    starred: data.starred ?? false,
+    confidenceScore: data.confidenceScore,
+    createdAt: now,
+    updatedAt: now,
+  };
+  if (data.thumbnail) payload.thumbnail = data.thumbnail;
+  if (data.transcript) payload.transcript = data.transcript;
+  if (data.viewCount != null) payload.viewCount = data.viewCount;
+  if (data.duration) payload.duration = data.duration;
+  const ref = await addDoc(collection(db, INSIGHTS), payload);
   return ref.id;
 }
 
