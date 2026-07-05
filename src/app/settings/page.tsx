@@ -129,7 +129,7 @@ export default function SettingsPage() {
                   <p className="text-[#66717F] text-xs mt-0.5">{desc}</p>
                 </div>
                 <Toggle
-                  on={settings[key]}
+                  on={!!settings[key]}
                   onChange={(v) => handleToggle(key, v)}
                 />
               </div>
