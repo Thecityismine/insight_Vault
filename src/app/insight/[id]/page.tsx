@@ -295,34 +295,131 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
         </Link>
 
         <div className="flex-1 min-w-0">
-          {/* Editable title */}
-          {editingTitle ? (
-            <div className="flex items-center gap-2">
-              <input
-                ref={titleRef}
-                value={titleDraft}
-                onChange={(e) => setTitleDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") saveTitle(); if (e.key === "Escape") cancelTitle(); }}
-                className="flex-1 bg-[#111821] border border-[#00E676]/40 rounded-xl px-3 py-1.5 text-[#F5F7FA] text-xl font-bold focus:outline-none"
-              />
-              <button onClick={saveTitle} className="w-8 h-8 rounded-lg bg-[#00E676]/10 border border-[#00E676]/20 flex items-center justify-center text-[#00E676] hover:bg-[#00E676]/20 transition-colors">
-                <Check size={14} />
-              </button>
-              <button onClick={cancelTitle} className="w-8 h-8 rounded-lg border border-[#1E2A36] flex items-center justify-center text-[#66717F] hover:text-[#F5F7FA] transition-colors">
-                <X size={14} />
-              </button>
+          {/* Title + actions on same row */}
+          <div className="flex items-start gap-2">
+            <div className="flex-1 min-w-0">
+              {editingTitle ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={titleRef}
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") saveTitle(); if (e.key === "Escape") cancelTitle(); }}
+                    className="flex-1 bg-[#111821] border border-[#00E676]/40 rounded-xl px-3 py-1.5 text-[#F5F7FA] text-lg font-bold focus:outline-none"
+                  />
+                  <button onClick={saveTitle} className="w-8 h-8 rounded-lg bg-[#00E676]/10 border border-[#00E676]/20 flex items-center justify-center text-[#00E676] hover:bg-[#00E676]/20 transition-colors flex-shrink-0">
+                    <Check size={14} />
+                  </button>
+                  <button onClick={cancelTitle} className="w-8 h-8 rounded-lg border border-[#1E2A36] flex items-center justify-center text-[#66717F] hover:text-[#F5F7FA] transition-colors flex-shrink-0">
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 group/title">
+                  <h1 className="text-lg sm:text-xl font-bold text-[#F5F7FA] leading-tight">{insight.title}</h1>
+                  <button
+                    onClick={startEditTitle}
+                    className="opacity-0 group-hover/title:opacity-100 transition-opacity mt-1 text-[#66717F] hover:text-[#A7B0BC] flex-shrink-0"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="flex items-start gap-2 group/title">
-              <h1 className="text-xl font-bold text-[#F5F7FA] leading-tight">{insight.title}</h1>
+
+            {/* Action buttons — compact on mobile */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <Badge variant="green">{Math.round(insight.confidenceScore * 100)}%</Badge>
+
               <button
-                onClick={startEditTitle}
-                className="opacity-0 group-hover/title:opacity-100 transition-opacity mt-1 text-[#66717F] hover:text-[#A7B0BC]"
+                onClick={toggleStar}
+                title={insight.starred ? "Unstar" : "Star"}
+                className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-all ${
+                  insight.starred
+                    ? "bg-[#F5C542]/10 border-[#F5C542]/30 text-[#F5C542]"
+                    : "border-[#1E2A36] text-[#66717F] hover:text-[#F5C542] hover:border-[#F5C542]/30"
+                }`}
               >
-                <Pencil size={14} />
+                <Star size={14} fill={insight.starred ? "currentColor" : "none"} />
               </button>
+
+              {/* Export dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setExportOpen((v) => !v)}
+                  title="Export / Share"
+                  className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-all ${
+                    exportOpen ? "bg-[#3B82F6]/10 border-[#3B82F6]/30 text-[#3B82F6]" : "border-[#1E2A36] text-[#66717F] hover:text-[#3B82F6] hover:border-[#3B82F6]/30"
+                  }`}
+                >
+                  {notionExporting ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
+                </button>
+                {exportOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setExportOpen(false)} />
+                    <div className="absolute right-0 top-10 z-20 w-52 bg-[#0B0F14] border border-[#1E2A36] rounded-xl shadow-2xl shadow-black/50 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-[#1E2A36]">
+                        <p className="text-[#66717F] text-[10px] font-mono uppercase tracking-widest">Export & Share</p>
+                      </div>
+                      {[
+                        { icon: Copy, label: "Copy as text", action: handleCopyText },
+                        { icon: FileText, label: "Download Markdown", action: handleDownloadMarkdown },
+                        { icon: Printer, label: "Download PDF", action: handlePrint },
+                        { icon: Link2, label: shareUrl ? "Copy share link" : sharing ? "Creating link…" : "Create share link", action: handleShare },
+                        { icon: BookOpen, label: notionExporting ? "Sending…" : "Send to Notion", action: handleNotionExport },
+                      ].map(({ icon: Icon, label, action }) => (
+                        <button
+                          key={label}
+                          onClick={action}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-[#A7B0BC] hover:bg-[#111821] hover:text-[#F5F7FA] transition-colors text-left"
+                        >
+                          <Icon size={13} className="text-[#66717F] flex-shrink-0" />
+                          {label}
+                        </button>
+                      ))}
+                      {shareUrl && (
+                        <div className="px-3 py-2 border-t border-[#1E2A36]">
+                          <p className="text-[#66717F] text-[10px] font-mono truncate">{shareUrl}</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Re-process — hidden on mobile to save space */}
+              {insight.transcript?.text && (
+                <button
+                  onClick={handleReprocess}
+                  disabled={reprocessing}
+                  title="Re-process with AI"
+                  className="hidden sm:flex w-8 h-8 rounded-lg border border-[#1E2A36] items-center justify-center text-[#66717F] hover:text-[#3B82F6] hover:border-[#3B82F6]/30 transition-all disabled:opacity-50"
+                >
+                  {reprocessing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                </button>
+              )}
+
+              {/* Delete */}
+              {confirmDelete ? (
+                <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30">
+                  <span className="text-[#EF4444] text-xs">Delete?</span>
+                  <button onClick={handleDelete} disabled={deleting} className="text-[#EF4444] hover:text-white text-xs font-semibold transition-colors">
+                    {deleting ? "…" : "Yes"}
+                  </button>
+                  <span className="text-[#EF4444]/50">·</span>
+                  <button onClick={() => setConfirmDelete(false)} className="text-[#66717F] hover:text-[#A7B0BC] text-xs transition-colors">No</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  title="Delete insight"
+                  className="w-8 h-8 rounded-lg border border-[#1E2A36] flex items-center justify-center text-[#66717F] hover:text-[#EF4444] hover:border-[#EF4444]/30 transition-all"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Meta row */}
           <div className="flex items-center gap-3 mt-2 flex-wrap">
@@ -337,100 +434,6 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
               </a>
             )}
           </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <Badge variant="green">{Math.round(insight.confidenceScore * 100)}%</Badge>
-
-          {/* Star */}
-          <button
-            onClick={toggleStar}
-            title={insight.starred ? "Unstar" : "Star"}
-            className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-all ${
-              insight.starred
-                ? "bg-[#F5C542]/10 border-[#F5C542]/30 text-[#F5C542]"
-                : "border-[#1E2A36] text-[#66717F] hover:text-[#F5C542] hover:border-[#F5C542]/30"
-            }`}
-          >
-            <Star size={14} fill={insight.starred ? "currentColor" : "none"} />
-          </button>
-
-          {/* Export dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setExportOpen((v) => !v)}
-              title="Export / Share"
-              className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-all ${
-                exportOpen ? "bg-[#3B82F6]/10 border-[#3B82F6]/30 text-[#3B82F6]" : "border-[#1E2A36] text-[#66717F] hover:text-[#3B82F6] hover:border-[#3B82F6]/30"
-              }`}
-            >
-              {notionExporting ? <Loader2 size={14} className="animate-spin" /> : <Share2 size={14} />}
-            </button>
-            {exportOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setExportOpen(false)} />
-                <div className="absolute right-0 top-10 z-20 w-52 bg-[#0B0F14] border border-[#1E2A36] rounded-xl shadow-2xl shadow-black/50 overflow-hidden">
-                  <div className="px-3 py-2 border-b border-[#1E2A36]">
-                    <p className="text-[#66717F] text-[10px] font-mono uppercase tracking-widest">Export & Share</p>
-                  </div>
-                  {[
-                    { icon: Copy, label: "Copy as text", action: handleCopyText },
-                    { icon: FileText, label: "Download Markdown", action: handleDownloadMarkdown },
-                    { icon: Printer, label: "Download PDF", action: handlePrint },
-                    { icon: Link2, label: shareUrl ? "Copy share link" : sharing ? "Creating link…" : "Create share link", action: handleShare },
-                    { icon: BookOpen, label: notionExporting ? "Sending…" : "Send to Notion", action: handleNotionExport },
-                  ].map(({ icon: Icon, label, action }) => (
-                    <button
-                      key={label}
-                      onClick={action}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-[#A7B0BC] hover:bg-[#111821] hover:text-[#F5F7FA] transition-colors text-left"
-                    >
-                      <Icon size={13} className="text-[#66717F] flex-shrink-0" />
-                      {label}
-                    </button>
-                  ))}
-                  {shareUrl && (
-                    <div className="px-3 py-2 border-t border-[#1E2A36]">
-                      <p className="text-[#66717F] text-[10px] font-mono truncate">{shareUrl}</p>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Re-process */}
-          {insight.transcript?.text && (
-            <button
-              onClick={handleReprocess}
-              disabled={reprocessing}
-              title="Re-process with AI"
-              className="w-8 h-8 rounded-lg border border-[#1E2A36] flex items-center justify-center text-[#66717F] hover:text-[#3B82F6] hover:border-[#3B82F6]/30 transition-all disabled:opacity-50"
-            >
-              {reprocessing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-            </button>
-          )}
-
-          {/* Delete */}
-          {confirmDelete ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30">
-              <span className="text-[#EF4444] text-xs">Delete?</span>
-              <button onClick={handleDelete} disabled={deleting} className="text-[#EF4444] hover:text-white text-xs font-semibold transition-colors">
-                {deleting ? "…" : "Yes"}
-              </button>
-              <span className="text-[#EF4444]/50">·</span>
-              <button onClick={() => setConfirmDelete(false)} className="text-[#66717F] hover:text-[#A7B0BC] text-xs transition-colors">No</button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setConfirmDelete(true)}
-              title="Delete insight"
-              className="w-8 h-8 rounded-lg border border-[#1E2A36] flex items-center justify-center text-[#66717F] hover:text-[#EF4444] hover:border-[#EF4444]/30 transition-all"
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
         </div>
       </div>
 

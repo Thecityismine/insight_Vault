@@ -37,7 +37,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* Sidebar — fixed overlay on mobile, in-flow on desktop */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 flex flex-col bg-[#0B0F14] border-r border-[#1E2A36] transition-transform duration-300",
+          "fixed inset-y-0 left-0 z-50 w-[280px] max-w-[85vw] flex flex-col bg-[#0B0F14] border-r border-[#1E2A36] transition-transform duration-300",
           "md:relative md:w-60 md:h-screen md:translate-x-0 md:z-auto",
           open ? "translate-x-0" : "-translate-x-full"
         )}

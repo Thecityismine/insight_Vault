@@ -71,7 +71,7 @@ export default function LibraryPage() {
               <Download size={15} />
             </button>
           )}
-          <Link href="/add-link"><Button><Plus size={16} />Add Link</Button></Link>
+          <Link href="/add-link"><Button><Plus size={16} /><span className="hidden sm:inline">Add Link</span></Button></Link>
         </div>
       </div>
 

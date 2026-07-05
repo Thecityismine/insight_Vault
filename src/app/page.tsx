@@ -59,7 +59,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-[#F5F7FA] tracking-tight">Command Center</h1>
           <p className="text-[#66717F] text-sm font-mono mt-0.5">INSIGHT TERMINAL — v1.0</p>
         </div>
-        <Link href="/add-link"><Button><Plus size={16} />Process New Link</Button></Link>
+        <Link href="/add-link" className="hidden sm:block"><Button><Plus size={16} />Process New Link</Button></Link>
       </div>
 
       {loading ? (
