@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
       url,
       platform: meta.platform as Platform,
       title: videoTitle || extracted.title || "Untitled Insight",
-      thumbnail,
+      ...(thumbnail ? { thumbnail } : {}),
       summary: extracted.summary ?? "",
       keyPoints: extracted.keyPoints ?? [],
       actionItems,
