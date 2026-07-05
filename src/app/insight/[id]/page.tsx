@@ -594,7 +594,18 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
         <div className="space-y-4">
           <Card className="p-5">
             <h2 className="text-[#66717F] text-xs uppercase tracking-widest font-mono mb-3">Implementation Framework</h2>
-            <p className="text-[#A7B0BC] text-sm leading-relaxed whitespace-pre-line">{insight.implementationFramework}</p>
+            <ol className="space-y-2">
+              {insight.implementationFramework
+                .split(/(?=\d+\.\s)/)
+                .map((s) => s.trim())
+                .filter(Boolean)
+                .map((step, i) => (
+                  <li key={i} className="flex gap-2.5 text-sm text-[#A7B0BC] leading-relaxed">
+                    <span className="text-[#00E676] font-mono text-xs mt-0.5 flex-shrink-0 w-4">{i + 1}.</span>
+                    <span>{step.replace(/^\d+\.\s*/, "")}</span>
+                  </li>
+                ))}
+            </ol>
           </Card>
 
           {insight.toolsMentioned?.length > 0 && (
