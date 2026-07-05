@@ -59,15 +59,9 @@ export function TopBar({ onMenuToggle, onQuickAdd }: TopBarProps) {
           </Link>
         </div>
 
-        {/* User info + sign out */}
+        {/* User avatar + sign out */}
         {user && (
           <div className="flex items-center gap-2">
-            <div className="text-right hidden lg:block">
-              <p className="text-[#F5F7FA] text-xs font-medium leading-none">
-                {user.displayName ?? user.email?.split("@")[0]}
-              </p>
-              <p className="text-[#66717F] text-xs font-mono mt-0.5 leading-none">{user.email}</p>
-            </div>
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00E676]/20 to-[#3B82F6]/20 border border-[#1E2A36] flex items-center justify-center text-[#00E676] text-xs font-bold font-mono flex-shrink-0">
               {(user.displayName ?? user.email ?? "?")[0].toUpperCase()}
             </div>
