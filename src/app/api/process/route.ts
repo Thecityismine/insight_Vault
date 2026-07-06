@@ -47,12 +47,13 @@ implementationFramework:
 - Write a DETAILED, self-contained guide a motivated beginner can follow without watching the video
 - Start with a "Prerequisites:" line listing accounts, software, or knowledge needed before step 1
 - Minimum 8 numbered steps; use as many as the content requires
-- Each step must be at least 2-3 sentences: what to do, exactly how to do it, and why it matters
-- Break complex steps into sub-steps: "1a. ..., 1b. ..."
-- Name specific platforms, APIs, settings, commands, or UI elements mentioned in the transcript
-- Never use vague language like "configure appropriately", "set up the tool", or "follow the instructions"
-- If a step involves signing up for a service, name the service and describe what tier/plan is needed
-- Format: plain numbered steps only (e.g. "Prerequisites: ... 1. Step: explanation. 2. Step: explanation.")
+- EVERY step must be 2-3 sentences minimum — never one sentence. Cover: (1) what to do, (2) exactly how to do it with specific details, (3) why it matters or what it unlocks
+- For any step with multiple actions, ALWAYS use lettered sub-steps: "1a. First action here. 1b. Second action here. 1c. Third action here."
+- Example of a GOOD step: "3. Connect Quiver Quant to Claude via MCP: Go to quiverquant.com, create an account and navigate to API Keys under your profile. Copy your key, then in Claude desktop open Settings > Integrations > Add MCP and paste the key into the Quiver Quant connector field. This gives Claude access to live insider trading data so it can make informed, data-driven trade decisions."
+- Example of a BAD step: "3. Connect Quiver Quant: Obtain an API key and paste it into Claude." — TOO VAGUE, REJECTED
+- Name specific UI elements, menu paths, button labels, and field names where possible
+- If a step involves signing up for a service, specify what plan/tier is needed (free vs paid)
+- Format: plain text, "Prerequisites: ... 1. Step title: explanation. 2. Step title: explanation."
 
 personalRelevance:
 - Write 3-5 sentences specific to someone who wants to apply this practically
@@ -68,14 +69,18 @@ confidenceScore:
 - Never assign 0.95+ unless the transcript contains explicit, verified technical instructions
 
 toolsMentioned:
-- Only include tools/platforms actually named and used in the transcript
-- Do not infer or add tools not mentioned
+- Only include tools/platforms/services actually named AND actively used or demonstrated in the transcript
+- Do not infer, abbreviate, or add tools not explicitly mentioned
+- If a tool name seems truncated or unclear in the transcript, omit it rather than guess
 
 categories:
-- 2-4 specific categories (e.g. "AI Trading Automation" not just "Trading")
+- 2-4 specific categories derived ONLY from this transcript's actual content
+- Do not reuse or reference categories from any other context
+- Good: "AI Agent Development", "Automated Trading", "Workflow Automation"
+- Bad: applying a trading category to a non-trading video
 
 tags:
-- 5-8 specific tags covering tools, techniques, and use cases mentioned`;
+- 5-8 specific tags covering tools, techniques, and use cases from this transcript only`;
 
 export async function POST(req: NextRequest) {
   try {
