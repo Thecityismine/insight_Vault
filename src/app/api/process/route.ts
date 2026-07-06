@@ -21,13 +21,25 @@ Return a JSON object with these exact fields:
   "actionItems": [
     { "text": "specific action", "priority": "high|medium|low" }
   ],
-  "implementationFramework": "Step-by-step framework for applying these insights",
+  "implementationFramework": "...",
   "toolsMentioned": ["tool1", "tool2"],
   "personalRelevance": "How these insights apply to building projects or businesses",
   "categories": ["category1", "category2"],
   "tags": ["tag1", "tag2"],
   "confidenceScore": 0.85
-}`;
+}
+
+CRITICAL — implementationFramework rules:
+- Write a DETAILED, self-contained guide someone can follow without watching the video
+- Minimum 6 numbered steps; use as many as needed to cover everything
+- Each step must include: what to do AND how to do it (specific tool names, URLs, settings, commands, config values, or code snippets mentioned in the transcript)
+- Break complex steps into sub-steps using letters: "1a. ..., 1b. ..."
+- Include prerequisites and setup steps the video assumes the reader already knows
+- Explain WHY each step matters, not just what to click
+- If the video mentions specific platforms, APIs, accounts, or services — name them and describe how to sign up or access them
+- Do NOT use vague language like "configure appropriately" or "set up the tool" — be explicit
+- Format: plain text with numbered steps only (e.g. "1. Step title: detailed explanation. 2. ...")
+- Aim for the level of detail that would let a motivated beginner complete the full implementation`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -87,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     // Extract insights with AI
     const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         {
@@ -103,7 +115,7 @@ export async function POST(req: NextRequest) {
         },
       ],
       response_format: { type: "json_object" },
-      max_tokens: 2000,
+      max_tokens: 4000,
     });
 
     const extracted = JSON.parse(completion.choices[0].message.content ?? "{}");
