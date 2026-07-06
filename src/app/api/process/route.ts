@@ -15,31 +15,67 @@ Given a transcript, extract structured insights in JSON format.
 
 Return a JSON object with these exact fields:
 {
-  "title": "Clear, descriptive title for the insight",
-  "summary": "2-3 sentence summary of the main content",
+  "title": "Clear, specific title that captures the core concept (not generic)",
+  "summary": "3-4 sentence summary covering the main concept, the approach taken, and the key outcome or opportunity",
   "keyPoints": ["point 1", "point 2", "..."],
   "actionItems": [
     { "text": "specific action", "priority": "high|medium|low" }
   ],
   "implementationFramework": "...",
   "toolsMentioned": ["tool1", "tool2"],
-  "personalRelevance": "How these insights apply to building projects or businesses",
+  "personalRelevance": "...",
   "categories": ["category1", "category2"],
   "tags": ["tag1", "tag2"],
   "confidenceScore": 0.85
 }
 
-CRITICAL — implementationFramework rules:
-- Write a DETAILED, self-contained guide someone can follow without watching the video
-- Minimum 6 numbered steps; use as many as needed to cover everything
-- Each step must include: what to do AND how to do it (specific tool names, URLs, settings, commands, config values, or code snippets mentioned in the transcript)
-- Break complex steps into sub-steps using letters: "1a. ..., 1b. ..."
-- Include prerequisites and setup steps the video assumes the reader already knows
-- Explain WHY each step matters, not just what to click
-- If the video mentions specific platforms, APIs, accounts, or services — name them and describe how to sign up or access them
-- Do NOT use vague language like "configure appropriately" or "set up the tool" — be explicit
-- Format: plain text with numbered steps only (e.g. "1. Step title: detailed explanation. 2. ...")
-- Aim for the level of detail that would let a motivated beginner complete the full implementation`;
+FIELD RULES:
+
+keyPoints:
+- Extract 7-10 key points minimum
+- Each point must be a specific, standalone insight — not a vague restatement of the title
+- Include concrete facts, numbers, comparisons, techniques, or quotes from the transcript
+- Bad example: "Claude supports trading" — Good example: "Claude can connect to Liquid Trade to execute real stock, crypto, and forex trades automatically without manual input"
+
+actionItems:
+- Extract 5-8 action items minimum
+- Each item must be immediately actionable — include the specific first step to take
+- Bad example: "Set up Claude for trading" — Good example: "Go to liquidtrade.io, create a free account, then open Claude desktop and ask it to connect to Liquid Trade via the integrations panel"
+- Assign priority: high = core to the implementation, medium = enhances it, low = optional optimization
+
+implementationFramework:
+- Write a DETAILED, self-contained guide a motivated beginner can follow without watching the video
+- Start with a "Prerequisites:" line listing accounts, software, or knowledge needed before step 1
+- Minimum 8 numbered steps; use as many as the content requires
+- Each step must be at least 2-3 sentences: what to do, exactly how to do it, and why it matters
+- Break complex steps into sub-steps: "1a. ..., 1b. ..."
+- Name specific platforms, APIs, settings, commands, or UI elements mentioned in the transcript
+- Never use vague language like "configure appropriately", "set up the tool", or "follow the instructions"
+- If a step involves signing up for a service, name the service and describe what tier/plan is needed
+- Format: plain numbered steps only (e.g. "Prerequisites: ... 1. Step: explanation. 2. Step: explanation.")
+
+personalRelevance:
+- Write 3-5 sentences specific to someone who wants to apply this practically
+- Identify the single highest-leverage takeaway they should act on first
+- Mention which parts are immediately usable vs. require more setup
+- Be direct and prescriptive, not generic ("this is useful for entrepreneurs")
+
+confidenceScore:
+- Score how well the transcript supports a complete, verifiable implementation
+- Factual technical tutorials with specific steps: 0.85-0.95
+- Strategy or opinion content without concrete steps: 0.55-0.75
+- Mixed content: 0.70-0.85
+- Never assign 0.95+ unless the transcript contains explicit, verified technical instructions
+
+toolsMentioned:
+- Only include tools/platforms actually named and used in the transcript
+- Do not infer or add tools not mentioned
+
+categories:
+- 2-4 specific categories (e.g. "AI Trading Automation" not just "Trading")
+
+tags:
+- 5-8 specific tags covering tools, techniques, and use cases mentioned`;
 
 export async function POST(req: NextRequest) {
   try {
