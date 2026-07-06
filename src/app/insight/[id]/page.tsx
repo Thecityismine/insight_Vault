@@ -597,18 +597,34 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
         <div className="space-y-4">
           <Card className="p-5">
             <h2 className="text-[#66717F] text-xs uppercase tracking-widest font-mono mb-3">Implementation Framework</h2>
-            <ol className="space-y-2">
-              {insight.implementationFramework
-                .split(/(?=\d+\.\s)/)
+            {(() => {
+              const raw = insight.implementationFramework;
+              const prereqMatch = raw.match(/^Prerequisites?:([^\n]*?)(?=\s*\d+\.)/i);
+              const prereq = prereqMatch ? prereqMatch[1].trim() : null;
+              const stepsText = prereqMatch ? raw.slice(prereqMatch[0].length) : raw;
+              const steps = stepsText
+                .split(/(?<!\d)(?=\d+\.\s)/)
                 .map((s) => s.trim())
-                .filter(Boolean)
-                .map((step, i) => (
-                  <li key={i} className="flex gap-2.5 text-sm text-[#A7B0BC] leading-relaxed">
-                    <span className="text-[#00E676] font-mono text-xs mt-0.5 flex-shrink-0 w-4">{i + 1}.</span>
-                    <span>{step.replace(/^\d+\.\s*/, "")}</span>
-                  </li>
-                ))}
-            </ol>
+                .filter(Boolean);
+              return (
+                <>
+                  {prereq && (
+                    <div className="mb-3 pb-3 border-b border-[#1E2A36]">
+                      <span className="text-[#66717F] text-xs font-mono uppercase tracking-widest">Prerequisites: </span>
+                      <span className="text-[#66717F] text-xs">{prereq}</span>
+                    </div>
+                  )}
+                  <ol className="space-y-3">
+                    {steps.map((step, i) => (
+                      <li key={i} className="flex gap-2.5 text-sm text-[#A7B0BC] leading-relaxed">
+                        <span className="text-[#00E676] font-mono text-xs mt-0.5 flex-shrink-0 w-5">{i + 1}.</span>
+                        <span>{step.replace(/^\d+\.\s*/, "")}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </>
+              );
+            })()}
           </Card>
 
           {insight.toolsMentioned?.length > 0 && (
