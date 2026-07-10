@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/lib/auth";
-import { getUserSettings, saveUserSettings } from "@/lib/firestore";
+import { getUserSettings, saveUserSettings, migrateAllTranscripts } from "@/lib/firestore";
 import type { UserSettings } from "@/lib/firestore";
-import { Loader2, Check, ExternalLink } from "lucide-react";
+import { Loader2, Check, ExternalLink, Database } from "lucide-react";
 import toast from "react-hot-toast";
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
@@ -61,6 +61,7 @@ export default function SettingsPage() {
   const [notionToken, setNotionToken] = useState("");
   const [notionPageId, setNotionPageId] = useState("");
   const [savingNotion, setSavingNotion] = useState(false);
+  const [migrating, setMigrating] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -81,6 +82,23 @@ export default function SettingsPage() {
       toast.error("Failed to save");
     } finally {
       setSavingNotion(false);
+    }
+  }
+
+  async function handleMigrate() {
+    if (!user || migrating) return;
+    setMigrating(true);
+    try {
+      const count = await migrateAllTranscripts(user.uid);
+      toast.success(
+        count > 0
+          ? `Optimized ${count} insight${count === 1 ? "" : "s"}`
+          : "Library already optimized"
+      );
+    } catch {
+      toast.error("Migration failed — try again");
+    } finally {
+      setMigrating(false);
     }
   }
 
@@ -207,6 +225,29 @@ export default function SettingsPage() {
           >
             {savingNotion ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
             Save Notion settings
+          </button>
+        </div>
+      </Card>
+
+      {/* Storage optimization */}
+      <Card className="p-6">
+        <h2 className="text-[#F5F7FA] font-semibold text-sm mb-4">Storage</h2>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[#F5F7FA] text-sm">Optimize library storage</p>
+            <p className="text-[#66717F] text-xs mt-0.5">
+              Moves transcripts out of insight documents so the dashboard and
+              library load faster. Safe to run anytime — one-time cleanup for
+              insights saved before this update.
+            </p>
+          </div>
+          <button
+            onClick={handleMigrate}
+            disabled={migrating}
+            className="px-4 py-2 rounded-xl bg-[#00E676]/10 border border-[#00E676]/20 text-[#00E676] text-sm hover:bg-[#00E676]/20 transition-colors disabled:opacity-50 flex items-center gap-2 flex-shrink-0"
+          >
+            {migrating ? <Loader2 size={13} className="animate-spin" /> : <Database size={13} />}
+            {migrating ? "Optimizing..." : "Run"}
           </button>
         </div>
       </Card>

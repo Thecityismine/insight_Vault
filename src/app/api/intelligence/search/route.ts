@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { verifyAuth } from "@/lib/server/verify-auth";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -13,6 +14,11 @@ interface InsightSnippet {
 
 export async function POST(req: NextRequest) {
   try {
+    const uid = await verifyAuth(req);
+    if (!uid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { query, snippets } = await req.json() as { query: string; snippets: InsightSnippet[] };
 
     if (!query?.trim()) {

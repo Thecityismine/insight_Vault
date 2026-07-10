@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Client } from "@notionhq/client";
+import { verifyAuth } from "@/lib/server/verify-auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const uid = await verifyAuth(req);
+    if (!uid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { notionToken, parentPageId, insight } = await req.json();
 
     if (!notionToken) {

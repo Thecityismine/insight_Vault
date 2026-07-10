@@ -4,6 +4,7 @@ import { X, Link2, Loader2, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { createInsight } from "@/lib/firestore";
+import { authedPost } from "@/lib/api";
 import toast from "react-hot-toast";
 
 interface QuickAddModalProps {
@@ -42,24 +43,27 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
     setProcessing(true);
     setError("");
     try {
-      const res = await fetch("/api/process", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
-      });
+      const res = await authedPost(user, "/api/process", { url: url.trim() });
       if (res.status === 422) {
         setError("Couldn't fetch transcript — paste it manually on the Add Link page.");
         setProcessing(false);
         return;
       }
-      if (!res.ok) throw new Error("Processing failed");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Processing failed");
+      }
       const data = await res.json();
       const insightId = await createInsight({ userId: user.uid, ...data.insight });
       onClose();
       toast.success("Insight saved");
       router.push(`/insight/${insightId}`);
-    } catch {
-      setError("Processing failed. Check the URL and try again.");
+    } catch (err) {
+      setError(
+        err instanceof Error && err.message
+          ? err.message
+          : "Processing failed. Check the URL and try again."
+      );
       setProcessing(false);
     }
   }

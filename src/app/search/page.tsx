@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { useAuth } from "@/lib/auth";
 import { getUserInsights } from "@/lib/firestore";
+import { authedPost } from "@/lib/api";
 import { getPlatformLabel } from "@/lib/utils";
 import type { Insight } from "@/types";
 
@@ -88,10 +89,9 @@ export default function SearchPage() {
 
     try {
       const snippets = buildSnippets(searchQuery, library);
-      const res = await fetch("/api/intelligence/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: searchQuery, snippets }),
+      const res = await authedPost(user, "/api/intelligence/search", {
+        query: searchQuery,
+        snippets,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Search failed");

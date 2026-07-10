@@ -12,11 +12,12 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth";
-import { getInsight, updateInsight, deleteInsight, toggleActionItem, createShare, getUserSettings, getUserInsights, incrementViewCount, createInsight } from "@/lib/firestore";
+import { getInsightWithTranscript, updateInsight, deleteInsight, toggleActionItem, createShare, getUserSettings, getUserInsights, incrementViewCount, createInsight } from "@/lib/firestore";
 import { getRelatedInsights, type RelatedInsight } from "@/lib/intelligence";
 import { getPlatformLabel, formatDate } from "@/lib/utils";
 import { stripTimestamps } from "@/lib/transcript/clean";
 import { toPlainText, downloadMarkdown, printInsight } from "@/lib/export";
+import { authedPost } from "@/lib/api";
 import type { Insight } from "@/types";
 import toast from "react-hot-toast";
 
@@ -59,7 +60,7 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
 
   useEffect(() => {
     if (!user) return;
-    getInsight(id).then(async (ins) => {
+    getInsightWithTranscript(id).then(async (ins) => {
       setInsight(ins);
       if (ins) {
         incrementViewCount(id).catch(() => {});
@@ -170,13 +171,9 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
     if (!insight?.transcript?.text || !user) return;
     setReprocessing(true);
     try {
-      const res = await fetch("/api/process", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: insight.url,
-          manualTranscript: insight.transcript.text,
-        }),
+      const res = await authedPost(user, "/api/process", {
+        url: insight.url,
+        manualTranscript: insight.transcript.text,
       });
       if (!res.ok) throw new Error("Re-process failed");
       const data = await res.json();
@@ -244,10 +241,10 @@ export default function InsightPage({ params }: { params: Promise<{ id: string }
         toast.error("Add your Notion token and page ID in Settings first");
         return;
       }
-      const res = await fetch("/api/export/notion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notionToken, parentPageId: notionPageId, insight }),
+      const res = await authedPost(user, "/api/export/notion", {
+        notionToken,
+        parentPageId: notionPageId,
+        insight,
       });
       if (!res.ok) {
         const err = await res.json();

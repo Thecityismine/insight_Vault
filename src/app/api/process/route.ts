@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { verifyAuth } from "@/lib/server/verify-auth";
 import { parseLink } from "@/lib/transcript/platform";
 import { fetchTranscript } from "@/lib/transcript";
 import { fetchYouTubeMetadata } from "@/lib/transcript/youtube";
@@ -84,6 +85,11 @@ tags:
 
 export async function POST(req: NextRequest) {
   try {
+    const uid = await verifyAuth(req);
+    if (!uid) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { url, manualTranscript } = await req.json();
 
     if (!url && !manualTranscript?.trim()) {
@@ -91,6 +97,17 @@ export async function POST(req: NextRequest) {
     }
 
     const isManualOnly = url === "manual://transcript" || !url;
+    if (!isManualOnly) {
+      let parsed: URL;
+      try {
+        parsed = new URL(url);
+      } catch {
+        return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+      }
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        return NextResponse.json({ error: "Only http(s) URLs are supported" }, { status: 400 });
+      }
+    }
     const meta = isManualOnly
       ? { platform: "other" as const, url: "manual://transcript" }
       : parseLink(url);

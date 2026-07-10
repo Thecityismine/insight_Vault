@@ -9,9 +9,13 @@ import {
   deleteDoc,
   query,
   where,
+  increment,
+  orderBy,
+  limit,
+  deleteField,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import type { Insight, ActionItem } from "@/types";
+import type { Insight, ActionItem, TranscriptData } from "@/types";
 
 export interface UserSettings {
   autoCategories: boolean;
@@ -83,11 +87,58 @@ export async function createInsight(
     updatedAt: now,
   };
   if (data.thumbnail) payload.thumbnail = data.thumbnail;
-  if (data.transcript) payload.transcript = data.transcript;
   if (data.viewCount != null) payload.viewCount = data.viewCount;
   if (data.duration) payload.duration = data.duration;
   const ref = await addDoc(collection(db, INSIGHTS), payload);
+  // Transcript lives in a subcollection so list/dashboard queries don't
+  // download megabytes of transcript text with every insight
+  if (data.transcript) {
+    const transcript = JSON.parse(JSON.stringify(data.transcript));
+    try {
+      await setDoc(transcriptRef(ref.id), transcript);
+    } catch {
+      // Subcollection rules not deployed yet — embed on the doc (legacy
+      // format); the lazy migration moves it once rules are live
+      await updateDoc(ref, { transcript });
+    }
+  }
   return ref.id;
+}
+
+// ── Transcripts (insights/{id}/private/transcript) ───────────────────────────
+
+function transcriptRef(insightId: string) {
+  return doc(db, INSIGHTS, insightId, "private", "transcript");
+}
+
+export async function getInsightTranscript(
+  insightId: string
+): Promise<TranscriptData | null> {
+  const snap = await getDoc(transcriptRef(insightId));
+  return snap.exists() ? (snap.data() as TranscriptData) : null;
+}
+
+/** Move a legacy embedded transcript into the subcollection. */
+async function migrateTranscript(insight: Insight): Promise<void> {
+  if (!insight.transcript) return;
+  await setDoc(transcriptRef(insight.id), JSON.parse(JSON.stringify(insight.transcript)));
+  await updateDoc(doc(db, INSIGHTS, insight.id), { transcript: deleteField() });
+}
+
+/**
+ * One-time cleanup for libraries created before transcripts moved to the
+ * subcollection. Returns how many insights were migrated.
+ */
+export async function migrateAllTranscripts(userId: string): Promise<number> {
+  const insights = await getUserInsights(userId);
+  let migrated = 0;
+  for (const insight of insights) {
+    if (insight.transcript?.text) {
+      await migrateTranscript(insight);
+      migrated++;
+    }
+  }
+  return migrated;
 }
 
 export async function getInsight(id: string): Promise<Insight | null> {
@@ -96,18 +147,60 @@ export async function getInsight(id: string): Promise<Insight | null> {
   return { id: snap.id, ...snap.data() } as Insight;
 }
 
+/**
+ * Insight plus its transcript. Legacy docs still carry the transcript
+ * embedded — those are migrated to the subcollection in the background.
+ */
+export async function getInsightWithTranscript(id: string): Promise<Insight | null> {
+  const insight = await getInsight(id);
+  if (!insight) return null;
+  if (insight.transcript?.text) {
+    migrateTranscript(insight).catch(() => {});
+    return insight;
+  }
+  const transcript = await getInsightTranscript(id);
+  return transcript ? { ...insight, transcript } : insight;
+}
+
 export async function getUserInsights(userId: string): Promise<Insight[]> {
-  const snap = await getDocs(
-    query(collection(db, INSIGHTS), where("userId", "==", userId))
-  );
-  return sortByDate(
-    snap.docs.map((d) => ({ id: d.id, ...d.data() } as Insight))
-  );
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, INSIGHTS),
+        where("userId", "==", userId),
+        orderBy("createdAt", "desc")
+      )
+    );
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Insight));
+  } catch {
+    // Composite index (userId + createdAt) not deployed yet — fall back to
+    // an unordered query and sort client-side
+    const snap = await getDocs(
+      query(collection(db, INSIGHTS), where("userId", "==", userId))
+    );
+    return sortByDate(
+      snap.docs.map((d) => ({ id: d.id, ...d.data() } as Insight))
+    );
+  }
 }
 
 export async function getRecentInsights(userId: string, count = 5): Promise<Insight[]> {
-  const all = await getUserInsights(userId);
-  return all.slice(0, count);
+  try {
+    const snap = await getDocs(
+      query(
+        collection(db, INSIGHTS),
+        where("userId", "==", userId),
+        orderBy("createdAt", "desc"),
+        limit(count)
+      )
+    );
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Insight));
+  } catch {
+    // Composite index (userId + createdAt) not deployed yet — fall back to
+    // fetching everything and sorting client-side
+    const all = await getUserInsights(userId);
+    return all.slice(0, count);
+  }
 }
 
 export async function updateInsight(id: string, data: Partial<Insight>): Promise<void> {
@@ -118,14 +211,12 @@ export async function updateInsight(id: string, data: Partial<Insight>): Promise
 }
 
 export async function deleteInsight(id: string): Promise<void> {
+  await deleteDoc(transcriptRef(id)).catch(() => {});
   await deleteDoc(doc(db, INSIGHTS, id));
 }
 
 export async function incrementViewCount(id: string): Promise<void> {
-  const snap = await getDoc(doc(db, INSIGHTS, id));
-  if (!snap.exists()) return;
-  const current = (snap.data().viewCount as number) ?? 0;
-  await updateDoc(doc(db, INSIGHTS, id), { viewCount: current + 1 });
+  await updateDoc(doc(db, INSIGHTS, id), { viewCount: increment(1) });
 }
 
 export async function toggleActionItem(
@@ -162,6 +253,7 @@ const SHARES = "shares";
 
 export interface SharedInsight {
   token: string;
+  ownerId: string;
   title: string;
   summary: string;
   keyPoints: string[];
@@ -182,6 +274,7 @@ export async function createShare(insight: Insight): Promise<string> {
   const token = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
   const shareData: SharedInsight = {
     token,
+    ownerId: insight.userId,
     title: insight.title,
     summary: insight.summary,
     keyPoints: insight.keyPoints,

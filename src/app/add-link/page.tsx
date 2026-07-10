@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/Badge";
 import { parseLink } from "@/lib/transcript/platform";
 import { getPlatformLabel } from "@/lib/utils";
 import { createInsight } from "@/lib/firestore";
+import { authedPost } from "@/lib/api";
 
 type Step =
   | "idle"
@@ -56,6 +57,7 @@ export default function AddLinkPage() {
     const hasUrl = url.trim().length > 0;
     const hasTranscript = transcript.trim().length > 0;
 
+    if (!user) return;
     if (mode === "link" && !hasUrl) return;
     if (mode === "transcript" && !hasTranscript) return;
 
@@ -68,13 +70,8 @@ export default function AddLinkPage() {
       if (hasUrl) body.url = url.trim();
       if (hasTranscript) body.manualTranscript = transcript.trim();
       if (!hasUrl) body.url = "manual://transcript";
-      if (user) body.userId = user.uid;
 
-      const res = await fetch("/api/process", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const res = await authedPost(user, "/api/process", body);
 
       if (!res.ok) {
         const data = await res.json();
@@ -90,7 +87,7 @@ export default function AddLinkPage() {
       const data = await res.json();
 
       // Save to Firestore client-side (authenticated context satisfies security rules)
-      const insightId = await createInsight({ userId: user!.uid, ...data.insight });
+      const insightId = await createInsight({ userId: user.uid, ...data.insight });
       setStep("done");
 
       setTimeout(() => {
