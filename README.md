@@ -2,6 +2,12 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Copy `.env.example` to `.env.local` and add your Firebase and OpenAI values. To
+automatically fetch transcripts from public TikTok and Instagram posts—and to
+use a managed fallback for YouTube—also add a Scrape Creators API key as
+`SCRAPE_CREATORS_API_KEY`. The key is read only by server-side route handlers
+and must never use a `NEXT_PUBLIC_` prefix.
+
 First, run the development server:
 
 ```bash

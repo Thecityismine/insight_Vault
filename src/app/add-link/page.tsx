@@ -76,6 +76,11 @@ export default function AddLinkPage() {
       if (!res.ok) {
         const data = await res.json();
         if (data.needsManualTranscript) {
+          setError(
+            Array.isArray(data.warnings) && data.warnings.length
+              ? data.warnings.join(" · ")
+              : "Automatic transcript extraction failed."
+          );
           setStep("needs_manual");
           setMode("transcript");
           return;
@@ -115,7 +120,7 @@ export default function AddLinkPage() {
           Process New Insight
         </h1>
         <p className="text-[#66717F] text-sm mt-1">
-          Paste a link for automatic extraction, or paste a transcript directly.
+          Paste a YouTube, TikTok, or Instagram link to fetch its transcript automatically.
         </p>
       </div>
 
@@ -161,7 +166,7 @@ export default function AddLinkPage() {
                 type="url"
                 value={url}
                 onChange={(e) => handleUrlChange(e.target.value)}
-                placeholder="Paste a YouTube, TikTok, X Space, or podcast link..."
+                placeholder="Paste a YouTube, TikTok, Instagram, X Space, or podcast link..."
                 disabled={isProcessing}
                 className="w-full bg-[#0B0F14] border border-[#1E2A36] rounded-xl pl-11 pr-4 py-3.5 text-sm text-[#F5F7FA] placeholder:text-[#66717F] focus:outline-none focus:border-[#00E676]/50 focus:ring-1 focus:ring-[#00E676]/20 transition-all disabled:opacity-50"
               />
@@ -278,7 +283,7 @@ export default function AddLinkPage() {
                 Automatic transcript unavailable
               </p>
               <p className="text-[#A7B0BC] text-xs mt-0.5">
-                Switch to the Paste Transcript tab and paste it manually.
+                {error || "Switch to the Paste Transcript tab and paste it manually."}
               </p>
             </div>
           </div>
@@ -310,7 +315,7 @@ export default function AddLinkPage() {
           <div className="space-y-2">
             {[
               "YouTube official captions",
-              "Third-party transcript service",
+              "Scrape Creators (YouTube, TikTok, Instagram)",
               "Audio extraction + Whisper AI",
               "Manual transcript paste (this tab)",
             ].map((label, i) => (

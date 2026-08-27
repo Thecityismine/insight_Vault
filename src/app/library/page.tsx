@@ -10,11 +10,12 @@ import { getUserInsights } from "@/lib/firestore";
 import { downloadLibraryJSON } from "@/lib/export";
 import type { Insight } from "@/types";
 
-const PLATFORMS = ["All", "YouTube", "TikTok", "X Spaces", "Podcast", "Other"];
+const PLATFORMS = ["All", "YouTube", "TikTok", "Instagram", "X Spaces", "Podcast", "Other"];
 
 const PLATFORM_MAP: Record<string, string> = {
   YouTube: "youtube",
   TikTok: "tiktok",
+  Instagram: "instagram",
   "X Spaces": "x_spaces",
   Podcast: "podcast",
   Other: "other",

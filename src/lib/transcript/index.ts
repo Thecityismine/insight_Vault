@@ -2,6 +2,10 @@ import { fetchYouTubeTranscript } from "./youtube";
 import { transcribeAudioUrl } from "./audio";
 import { fetchPodcastTranscript } from "./podcast";
 import { cleanTranscript } from "./clean";
+import {
+  fetchScrapeCreatorsTranscript,
+  isScrapeCreatorsConfigured,
+} from "./scrape-creators";
 import type { TranscriptResult, LinkMetadata } from "./types";
 
 export async function fetchTranscript(meta: LinkMetadata): Promise<TranscriptResult> {
@@ -21,6 +25,17 @@ export async function fetchTranscript(meta: LinkMetadata): Promise<TranscriptRes
       };
     }
     warnings.push("YouTube captions unavailable");
+  }
+
+  // Managed provider for social URLs, plus a second caption source for YouTube.
+  if (["youtube", "tiktok", "instagram"].includes(meta.platform)) {
+    const scraped = await fetchScrapeCreatorsTranscript(meta);
+    if (scraped) return scraped;
+    warnings.push(
+      isScrapeCreatorsConfigured()
+        ? `Scrape Creators could not extract a ${meta.platform} transcript`
+        : "Scrape Creators is not configured (set SCRAPE_CREATORS_API_KEY)"
+    );
   }
 
   // Podcast — try extracting audio from RSS feed and running Whisper

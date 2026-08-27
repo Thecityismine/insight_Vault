@@ -5,7 +5,13 @@ export type TranscriptSource =
   | "audio_transcription"
   | "manual_paste";
 
-export type Platform = "youtube" | "tiktok" | "x_spaces" | "podcast" | "other";
+export type Platform =
+  | "youtube"
+  | "tiktok"
+  | "instagram"
+  | "x_spaces"
+  | "podcast"
+  | "other";
 
 export type InsightStatus = "pending" | "processing" | "complete" | "error";
 

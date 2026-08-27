@@ -28,6 +28,7 @@ export function getPlatformLabel(platform: string): string {
   const labels: Record<string, string> = {
     youtube: "YouTube",
     tiktok: "TikTok",
+    instagram: "Instagram",
     x_spaces: "X Spaces",
     podcast: "Podcast",
     other: "Other",

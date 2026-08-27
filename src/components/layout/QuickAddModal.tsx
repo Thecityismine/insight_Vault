@@ -45,7 +45,9 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
     try {
       const res = await authedPost(user, "/api/process", { url: url.trim() });
       if (res.status === 422) {
-        setError("Couldn't fetch transcript — paste it manually on the Add Link page.");
+        const data = await res.json().catch(() => ({}));
+        const reason = Array.isArray(data.warnings) ? data.warnings.join(" · ") : "";
+        setError(reason || "Couldn't fetch transcript — paste it manually on the Add Link page.");
         setProcessing(false);
         return;
       }
@@ -94,7 +96,7 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
               type="text"
               value={url}
               onChange={(e) => { setUrl(e.target.value); setError(""); }}
-              placeholder="Paste a YouTube, TikTok, or podcast URL..."
+              placeholder="Paste a YouTube, TikTok, Instagram, or podcast URL..."
               className="flex-1 bg-transparent text-sm text-[#F5F7FA] placeholder:text-[#3D4D5C] focus:outline-none"
               disabled={processing}
             />
@@ -120,7 +122,7 @@ export function QuickAddModal({ open, onClose }: QuickAddModalProps) {
 
         {/* Footer hints */}
         <div className="px-4 pb-4 flex items-center gap-2 flex-wrap">
-          {["YouTube", "TikTok", "X Spaces", "Podcast"].map((p) => (
+          {["YouTube", "TikTok", "Instagram", "X Spaces", "Podcast"].map((p) => (
             <span key={p} className="text-[10px] font-mono text-[#3D4D5C] border border-[#1E2A36] rounded-lg px-2 py-1">
               {p}
             </span>

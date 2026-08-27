@@ -7,6 +7,12 @@ import { getUserSettings, saveUserSettings, migrateAllTranscripts } from "@/lib/
 import type { UserSettings } from "@/lib/firestore";
 import { Loader2, Check, ExternalLink, Database } from "lucide-react";
 import toast from "react-hot-toast";
+import { authedGet } from "@/lib/api";
+
+interface IntegrationStatus {
+  openAI: boolean;
+  scrapeCreators: boolean;
+}
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -62,6 +68,7 @@ export default function SettingsPage() {
   const [notionPageId, setNotionPageId] = useState("");
   const [savingNotion, setSavingNotion] = useState(false);
   const [migrating, setMigrating] = useState(false);
+  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -70,6 +77,10 @@ export default function SettingsPage() {
       setNotionToken(s.notionToken ?? "");
       setNotionPageId(s.notionPageId ?? "");
     });
+    authedGet(user, "/api/integrations/status")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((status) => status && setIntegrationStatus(status))
+      .catch(() => {});
   }, [user]);
 
   async function saveNotionSettings() {
@@ -165,7 +176,30 @@ export default function SettingsPage() {
               <p className="text-[#F5F7FA] text-sm">OpenAI API Key</p>
               <p className="text-[#66717F] text-xs mt-0.5">Stored securely in Vercel environment variables</p>
             </div>
-            <Badge variant="green">Active</Badge>
+            <Badge variant={integrationStatus?.openAI ? "green" : "gold"}>
+              {integrationStatus?.openAI ? "Active" : "Setup needed"}
+            </Badge>
+          </div>
+          <div className="flex items-center justify-between py-2 border-b border-[#1E2A36]">
+            <div>
+              <p className="text-[#F5F7FA] text-sm">Scrape Creators API Key</p>
+              <p className="text-[#66717F] text-xs mt-0.5">
+                Enables automatic YouTube, TikTok, and Instagram transcripts
+              </p>
+              {!integrationStatus?.scrapeCreators && (
+                <a
+                  href="https://scrapecreators.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#3B82F6] text-xs mt-1 inline-flex items-center gap-1 hover:underline"
+                >
+                  Get an API key <ExternalLink size={10} />
+                </a>
+              )}
+            </div>
+            <Badge variant={integrationStatus?.scrapeCreators ? "green" : "gold"}>
+              {integrationStatus?.scrapeCreators ? "Active" : "Setup needed"}
+            </Badge>
           </div>
           <div className="flex items-center justify-between py-2">
             <div>

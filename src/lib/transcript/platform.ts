@@ -4,6 +4,7 @@ import type { Platform } from "@/types";
 export function detectPlatform(url: string): Platform {
   if (/youtube\.com|youtu\.be/.test(url)) return "youtube";
   if (/tiktok\.com/.test(url)) return "tiktok";
+  if (/instagram\.com/.test(url)) return "instagram";
   if (/twitter\.com|x\.com/.test(url)) return "x_spaces";
   if (/spotify\.com|anchor\.fm|buzzsprout|soundcloud/.test(url)) return "podcast";
   return "other";
