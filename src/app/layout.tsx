@@ -14,6 +14,21 @@ export const metadata: Metadata = {
   },
   description: "Your private intelligence dashboard — extract insights from YouTube, podcasts, and more.",
   keywords: ["intelligence", "insights", "youtube", "podcast", "AI", "productivity"],
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Insight Terminal",
+    statusBarStyle: "black-translucent",
+  },
   openGraph: {
     title: "Insight Terminal",
     description: "Your private intelligence dashboard for ideas and insights.",
